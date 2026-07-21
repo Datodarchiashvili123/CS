@@ -110,6 +110,9 @@
           '<path class="wire net-a" d="M105,84 V118 H170 V150"/>' +
           '<path class="wire net-b" d="M315,84 V118 H250 V150"/>' +
           '<path class="wire net-alu" d="M210,214 V250"/>' +
+          '<path class="wire-arrow net-a" d="M166,143 L174,143 L170,150 Z"/>' +
+          '<path class="wire-arrow net-b" d="M246,143 L254,143 L250,150 Z"/>' +
+          '<path class="wire-arrow net-alu" d="M206,243 L214,243 L210,250 Z"/>' +
           // Register A
           '<rect class="node net-a" x="30" y="20" width="150" height="64" rx="8"/>' +
           '<text class="node-label" x="105" y="44" text-anchor="middle">Register A</text>' +

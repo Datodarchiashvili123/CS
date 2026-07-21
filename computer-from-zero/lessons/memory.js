@@ -45,8 +45,9 @@
       container.append(
         CFZ.el("div", { className: "logic-row" }, [
           CFZ.el("div", { className: "logic-inputs" }, [dataSwitch.element, writeSwitch.element]),
-          CFZ.el("div", { className: "gate-symbol" }, [
-            CFZ.el("span", { className: "gate-symbol-label", text: "1-ბიტიანი უჯრედი" }),
+          CFZ.el("div", { className: "unit-chip" }, [
+            CFZ.el("span", { className: "unit-chip-title", text: "მეხსიერების" }),
+            CFZ.el("span", { className: "unit-chip-sub", text: "1-ბიტიანი უჯრედი" }),
           ]),
           qOutput.element,
         ]),

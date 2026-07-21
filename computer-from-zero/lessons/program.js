@@ -139,7 +139,13 @@
           ]),
           CFZ.el("div", { className: "program-state" }, [
             CFZ.el("h4", { text: "ფაზა (fetch → decode → execute)" }),
-            CFZ.el("div", { className: "phase-badges" }, phaseBadges.map(function (b) { return b.element; })),
+            CFZ.el("div", { className: "phase-badges" }, phaseBadges.reduce(function (acc, b, i) {
+              if (i > 0) {
+                acc.push(CFZ.el("span", { className: "phase-arrow", attrs: { "aria-hidden": "true" }, text: "→" }));
+              }
+              acc.push(b.element);
+              return acc;
+            }, [])),
             CFZ.el("div", { className: "reg-row" }, [regA.element, regB.element, regOut.element]),
           ]),
         ]),
