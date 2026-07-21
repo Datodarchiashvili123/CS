@@ -50,6 +50,217 @@
   box-sizing: border-box;
 }
 
+/* ---------- ავტორიზაცია ---------- */
+.login-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--bg);
+}
+
+body[data-authed] .login-screen {
+  display: none;
+}
+
+body:not([data-authed]) .top-bar,
+body:not([data-authed]) .app-shell {
+  display: none;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.login-sub {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.login-users {
+  display: grid;
+  gap: 8px;
+}
+
+.login-user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+
+.login-user:hover,
+.login-user:focus-visible {
+  border-color: var(--accent);
+}
+
+.login-user.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.login-user-name {
+  font-weight: 900;
+}
+
+.login-user-role {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.login-field {
+  display: grid;
+  gap: 6px;
+}
+
+.login-field span {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.login-password {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.login-password:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.login-error {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.login-submit {
+  width: 100%;
+}
+
+.login-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.top-bar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.user-badge {
+  display: grid;
+  line-height: 1.2;
+}
+
+.user-badge-name {
+  font-weight: 900;
+}
+
+.user-badge-role {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.top-bar-user .secondary-button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.dash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dash-panel {
+  width: min(480px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.dash-panel h2 {
+  margin: 0;
+}
+
+.dash-row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.dash-name {
+  font-weight: 800;
+}
+
+.dash-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.dash-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--electron);
+  transition: width 260ms ease;
+}
+
+.dash-count {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 html {
   min-height: 100%;
 }

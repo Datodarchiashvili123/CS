@@ -8,7 +8,12 @@
   const progressCaption = document.getElementById("progressCaption");
   const progressReset = document.getElementById("progressReset");
 
-  const STORAGE_KEY = "computer-from-zero:completed";
+  const authUser =
+    window.CFZAuth && typeof window.CFZAuth.current === "function"
+      ? window.CFZAuth.current()
+      : null;
+  const STORAGE_KEY =
+    "computer-from-zero:completed:" + (authUser ? authUser.id : "guest");
 
   let currentLessonIndex = 0;
   let cleanupCurrentLesson = null;
