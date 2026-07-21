@@ -7,7 +7,7 @@
     shortTitle: "ელექტრობა",
     theory: "ელექტრობა არის ელექტრონების მოძრაობა. როცა ელექტრონები ერთ მიმართულებით მოძრაობენ, ვიღებთ დენს.",
     analogy: "წარმოიდგინე წყალი მილში: წყალი მიედინება მილში, ელექტრონები კი მავთულში.",
-    physical: "ბატარეა ქმნის ბიძგს. ეს ბიძგი ელექტრონებს მავთულში ამოძრავებს და ნათურა ენერგიას სინათლედ აქცევს.",
+    physical: "კვების წყარო ქმნის ბიძგს. ეს ბიძგი ელექტრონებს მავთულში ამოძრავებს და ნათურა ენერგიას სინათლედ აქცევს.",
     challenge: "დააჭირე დაწყებას, გაატარე დენი წრედში და აანთე ნათურა.",
 
     createSimulation: function (container, setChallengeResult) {
@@ -26,7 +26,7 @@
         setChallengeResult(true, "შესრულებულია: ელექტრონებმა წრედში დენი შექმნეს.");
       });
 
-      const batteryPart = CFZ.createSchematicPart("battery", "ბატარეა", "V");
+      const batteryPart = CFZ.createSchematicPart("battery", "კვების წყარო", "V");
 
       container.append(
         CFZ.el("div", { className: "wire-stack" }, [

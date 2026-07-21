@@ -6,6 +6,7 @@
   const progressFill = document.getElementById("progressFill");
   const progressTrack = document.getElementById("progressTrack");
   const progressCaption = document.getElementById("progressCaption");
+  const progressReset = document.getElementById("progressReset");
 
   const STORAGE_KEY = "computer-from-zero:completed";
 
@@ -25,8 +26,19 @@
     createTruthTable,
     svgSymbol,
     createSchematicPart,
+    schematicGate,
+    goToLesson,
     wait,
   };
+
+  function goToLesson(id) {
+    const index = lessons.findIndex(function (lesson) {
+      return lesson.id === id;
+    });
+    if (index >= 0) {
+      showLesson(index);
+    }
+  }
 
   // კონვენციური სქემატური სიმბოლოები (stroke = currentColor, ფერს CSS აძლევს).
   const SYMBOL_MARKUP = {
@@ -77,6 +89,46 @@
     const wrapper = document.createElement("div");
     wrapper.innerHTML = markup.trim();
     return wrapper.firstChild;
+  }
+
+  // ერთი კარიბჭის SVG ფორმა მოცემულ (x,y) წერტილზე. x,y = მარცხენა-შუა (შესასვლელის დონე).
+  // აბრუნებს { markup, ports } — ports აქვს a/b (შესასვლელები), out (გამოსავალი), in (NOT-ისთვის).
+  function schematicGate(type, x, y, className) {
+    const cls = className || "gate";
+    let markup = "";
+    const ports = {};
+    if (type === "and") {
+      markup =
+        '<path class="' + cls + '" d="M' + x + "," + (y - 18) + " H" + (x + 18) +
+        " A18 18 0 0 1 " + (x + 18) + "," + (y + 18) + " H" + x + ' Z"/>';
+      ports.a = { x: x, y: y - 9 };
+      ports.b = { x: x, y: y + 9 };
+      ports.out = { x: x + 36, y: y };
+    } else if (type === "or" || type === "xor") {
+      let extra = "";
+      if (type === "xor") {
+        extra =
+          '<path class="' + cls + '" d="M' + (x - 6) + "," + (y - 18) +
+          " Q" + (x + 4) + "," + y + " " + (x - 6) + "," + (y + 18) + '"/>';
+      }
+      markup =
+        extra +
+        '<path class="' + cls + '" d="M' + x + "," + (y - 18) +
+        " Q" + (x + 22) + "," + (y - 18) + " " + (x + 40) + "," + y +
+        " Q" + (x + 22) + "," + (y + 18) + " " + x + "," + (y + 18) +
+        " Q" + (x + 12) + "," + y + " " + x + "," + (y - 18) + ' Z"/>';
+      ports.a = { x: x + 3, y: y - 9 };
+      ports.b = { x: x + 3, y: y + 9 };
+      ports.out = { x: x + 40, y: y };
+    } else if (type === "not") {
+      markup =
+        '<path class="' + cls + '" d="M' + x + "," + (y - 12) + " L" + (x + 26) + "," + y +
+        " L" + x + "," + (y + 12) + ' Z"/>' +
+        '<circle class="' + cls + '" cx="' + (x + 31) + '" cy="' + y + '" r="5"/>';
+      ports.in = { x: x, y: y };
+      ports.out = { x: x + 36, y: y };
+    }
+    return { markup: markup, ports: ports };
   }
 
   // ერთი სქემატური ნაწილი: სიმბოლო + ქართული სიტყვა + კონვენციური აღნიშვნა.
@@ -546,6 +598,15 @@
       showLesson(index);
     }
   });
+
+  if (progressReset) {
+    progressReset.addEventListener("click", function () {
+      completedLessons.clear();
+      saveProgress();
+      updateProgressSummary();
+      renderLessonList();
+    });
+  }
 
   updateProgressSummary();
   renderLessonList();
