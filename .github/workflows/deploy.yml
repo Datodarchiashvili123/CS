@@ -1,0 +1,64 @@
+name: CI / Deploy to youtome.cc
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # 1) CI — validate before deploying
+  check:
+    name: Syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check all JavaScript files
+        run: |
+          set -e
+          for f in computer-from-zero/app.js computer-from-zero/auth.js computer-from-zero/lessons/*.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+      - name: Ensure entry point exists
+        run: test -f computer-from-zero/index.html
+
+  # 2) CD — deploy the static site over SSH with rsync
+  deploy:
+    name: Deploy (rsync over SSH)
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify deploy secrets are configured
+        id: cfg
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          if [ -z "$HOST" ]; then
+            echo "::warning::DEPLOY_* secrets are not set yet — skipping deploy. Add them in repo Settings → Secrets and variables → Actions."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to server
+        if: steps.cfg.outputs.skip != 'true'
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+          REMOTE_USER: ${{ secrets.DEPLOY_USER }}
+          REMOTE_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H -p "$SSH_PORT" "$REMOTE_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          rsync -avz --delete --exclude 'serve.py' \
+            -e "ssh -p $SSH_PORT -i ~/.ssh/id_deploy" \
+            computer-from-zero/ \
+            "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
+          echo "✅ Deployed computer-from-zero/ → $REMOTE_HOST:$REMOTE_PATH"
