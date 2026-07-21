@@ -1,4 +1,4 @@
-name: CI / Deploy to youtome.cc
+name: CI / Deploy to tsre.in
 
 on:
   push:
