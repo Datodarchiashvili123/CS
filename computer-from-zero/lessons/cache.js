@@ -121,7 +121,11 @@
           boxes[3].element,
         ]),
         CFZ.el("div", { className: "control-row" }, [requestButton, clearButton]),
-        log
+        log,
+        CFZ.el("p", {
+          className: "breakdown-note",
+          text: "ქეში მუშაობს, რადგან პროგრამა ხშირად ერთსა და იმავე მონაცემს იმეორებს (ლოკალურობა). თუ მონაცემი ქეშშია — ეს „cache hit“ (სწრაფი); თუ არა და RAM-მდე უწევს ჩასვლა — „cache miss“ (ნელი).",
+        })
       );
 
       return function () {
