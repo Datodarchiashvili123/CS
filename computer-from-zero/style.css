@@ -891,6 +891,27 @@ h1 {
   stroke: var(--electron);
 }
 
+/* აქტიური მავთულების მოძრავი ნაკადი (ყველა SVG სქემაში) */
+@keyframes wire-flow {
+  to {
+    stroke-dashoffset: -13;
+  }
+}
+
+.circuit-svg .wire.on,
+.schematic-diagram .wire.on,
+.datapath .wire.on {
+  stroke-dasharray: 7 6;
+  animation: wire-flow 0.5s linear infinite;
+}
+
+.circuit-svg .sw.on .contact,
+.schematic-diagram .gate.on,
+.circuit-svg .cell.on,
+.datapath .node.on {
+  filter: drop-shadow(0 0 3px rgba(43, 189, 136, 0.55));
+}
+
 .circuit-svg .part {
   fill: none;
   stroke: var(--text);
@@ -1851,6 +1872,12 @@ h1 {
 
   .electron-track.is-flowing .electron {
     opacity: 1;
+  }
+
+  .circuit-svg .wire,
+  .schematic-diagram .wire,
+  .datapath .wire {
+    stroke-dasharray: none !important;
   }
 }
 
