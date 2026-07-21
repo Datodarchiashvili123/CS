@@ -44,7 +44,9 @@ NGINX
 
 sudo ln -sf "/etc/nginx/sites-available/$DOMAIN" "/etc/nginx/sites-enabled/$DOMAIN"
 sudo nginx -t
-sudo systemctl reload nginx
+# დარწმუნდი, რომ nginx გაშვებულია (reload მხოლოდ უკვე გაშვებულს ეხმარება)
+sudo systemctl enable --now nginx
+sudo systemctl reload nginx || sudo systemctl restart nginx
 echo "✅ http://$DOMAIN მზადაა (web root: $WEBROOT)"
 echo
 
