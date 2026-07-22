@@ -1,12 +1,10 @@
 (function () {
+  const appMain = document.getElementById("appMain");
+  const topNav = document.getElementById("topNav");
+  const brandBtn = document.getElementById("brandBtn");
+
   const lessons = window.ComputerFromZeroLessons || [];
-  const lessonRoot = document.getElementById("lessonRoot");
-  const lessonList = document.getElementById("lessonList");
-  const lessonCounter = document.getElementById("lessonCounter");
-  const progressFill = document.getElementById("progressFill");
-  const progressTrack = document.getElementById("progressTrack");
-  const progressCaption = document.getElementById("progressCaption");
-  const progressReset = document.getElementById("progressReset");
+  const exercises = window.CFZExercises || {};
 
   const authUser =
     window.CFZAuth && typeof window.CFZAuth.current === "function"
@@ -15,8 +13,23 @@
   const STORAGE_KEY =
     "computer-from-zero:completed:" + (authUser ? authUser.id : "guest");
 
-  let currentLessonIndex = 0;
+  // თავები — თავი 1 = კომპიუტერი ნულიდან (არსებული კურსი), დანარჩენი მალე.
+  const CHAPTERS = [
+    { id: "cfz", title: "კომპიუტერი ნულიდან", available: true },
+    { id: "html", title: "HTML", available: false },
+    { id: "css", title: "CSS", available: false },
+    { id: "js", title: "JavaScript", available: false },
+  ];
+
+  const NAV = [
+    { id: "home", label: "მთავარი" },
+    { id: "course", label: "კურსი" },
+    { id: "assignments", label: "დავალებები" },
+    { id: "resources", label: "რესურსები" },
+  ];
+
   let cleanupCurrentLesson = null;
+  let refreshSidebar = null;
   const completedLessons = loadProgress();
 
   window.CFZ = {
@@ -37,15 +50,11 @@
   };
 
   function goToLesson(id) {
-    const index = lessons.findIndex(function (lesson) {
-      return lesson.id === id;
-    });
-    if (index >= 0) {
-      showLesson(index);
-    }
+    navigate("course", "cfz", id);
   }
 
-  // კონვენციური სქემატური სიმბოლოები (stroke = currentColor, ფერს CSS აძლევს).
+  // ==================== ვიჯეტები (უცვლელი) ====================
+
   const SYMBOL_MARKUP = {
     vdd:
       '<svg class="symbol-svg symbol-vdd" viewBox="0 0 44 40" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" role="img" aria-label="კვება">' +
@@ -96,8 +105,6 @@
     return wrapper.firstChild;
   }
 
-  // ერთი კარიბჭის SVG ფორმა მოცემულ (x,y) წერტილზე. x,y = მარცხენა-შუა (შესასვლელის დონე).
-  // აბრუნებს { markup, ports } — ports აქვს a/b (შესასვლელები), out (გამოსავალი), in (NOT-ისთვის).
   function schematicGate(type, x, y, className) {
     const cls = className || "gate";
     let markup = "";
@@ -136,7 +143,6 @@
     return { markup: markup, ports: ports };
   }
 
-  // ერთი სქემატური ნაწილი: სიმბოლო + ქართული სიტყვა + კონვენციური აღნიშვნა.
   function createSchematicPart(symbolName, word, code) {
     const element = el("div", { className: "schematic-part" }, [
       svgSymbol(symbolName),
@@ -159,23 +165,19 @@
     if (settings.className) {
       node.className = settings.className;
     }
-
     if (settings.text !== undefined) {
       node.textContent = settings.text;
     }
-
     if (settings.attrs) {
       Object.keys(settings.attrs).forEach(function (name) {
         node.setAttribute(name, settings.attrs[name]);
       });
     }
-
     if (settings.on) {
       Object.keys(settings.on).forEach(function (eventName) {
         node.addEventListener(eventName, settings.on[eventName]);
       });
     }
-
     childList.forEach(function (child) {
       if (typeof child === "string") {
         node.append(document.createTextNode(child));
@@ -183,7 +185,6 @@
         node.append(child);
       }
     });
-
     return node;
   }
 
@@ -212,31 +213,25 @@
       },
       [el("span", { className: "switch-knob", attrs: { "aria-hidden": "true" } }, []), stateText]
     );
-
     const wrapper = el("div", { className: "switch-control" }, [
       el("span", { className: "switch-label", text: label }, []),
       button,
       bitBadge,
     ]);
-
     button.addEventListener("click", function () {
       value = !value;
       render(true);
     });
-
     function render(shouldNotify) {
       button.dataset.on = String(value);
       button.setAttribute("aria-checked", String(value));
       stateText.textContent = value ? "ON" : "OFF";
       bitBadge.textContent = value ? "1" : "0";
-
       if (shouldNotify && onChange) {
         onChange(value);
       }
     }
-
     render(false);
-
     return {
       element: wrapper,
       getValue: function () {
@@ -253,7 +248,6 @@
     const bulb = el("div", { className: "lamp-bulb", text: "💡" }, []);
     const caption = el("span", { className: "lamp-caption", text: label }, []);
     const element = el("div", { className: "lamp-widget" }, [bulb, caption]);
-
     return {
       element,
       setOn: function (isOn) {
@@ -265,11 +259,7 @@
   function createBitOutput(label) {
     const digit = el("div", { className: "output-digit", text: "0" }, []);
     const lamp = createLamp(label);
-    const element = el("div", { className: "logic-output" }, [
-      digit,
-      lamp.element,
-    ]);
-
+    const element = el("div", { className: "logic-output" }, [digit, lamp.element]);
     return {
       element,
       setValue: function (value) {
@@ -289,7 +279,6 @@
       el("span", { className: "electron" }, []),
       el("span", { className: "electron" }, []),
     ]);
-
     return {
       element: track,
       setFlowing: function (isFlowing) {
@@ -304,7 +293,6 @@
       el("span", { className: "signal-label", text: label }, []),
       valueNode,
     ]);
-
     return {
       element: chip,
       setValue: function (value) {
@@ -322,7 +310,6 @@
       el("p", { text: detail }, []),
       valueNode,
     ]);
-
     return {
       element: step,
       setActive: function (isActive) {
@@ -337,36 +324,19 @@
   function createTruthTable(headers, rows) {
     const bodyRows = [];
     const table = el("table", { className: "truth-table" }, [
-      el(
-        "thead",
-        {},
-        [
-          el(
-            "tr",
-            {},
-            headers.map(function (header) {
-              return el("th", { text: header }, []);
-            })
-          ),
-        ]
-      ),
-      el(
-        "tbody",
-        {},
-        rows.map(function (row) {
-          const tr = el(
-            "tr",
-            {},
-            row.map(function (cell) {
-              return el("td", { text: String(cell) }, []);
-            })
-          );
-          bodyRows.push(tr);
-          return tr;
-        })
-      ),
+      el("thead", {}, [
+        el("tr", {}, headers.map(function (header) {
+          return el("th", { text: header }, []);
+        })),
+      ]),
+      el("tbody", {}, rows.map(function (row) {
+        const tr = el("tr", {}, row.map(function (cell) {
+          return el("td", { text: String(cell) }, []);
+        }));
+        bodyRows.push(tr);
+        return tr;
+      })),
     ]);
-
     return {
       element: table,
       setActive: function (activeIndex) {
@@ -383,62 +353,247 @@
     });
   }
 
-  function renderLessonList() {
-    lessonList.innerHTML = "";
+  function createInfoBox(title, text) {
+    return el("div", { className: "info-box" }, [
+      el("strong", { text: title }, []),
+      el("p", { text }, []),
+    ]);
+  }
 
-    lessons.forEach(function (lesson, index) {
-      const isComplete = completedLessons.has(lesson.id);
-      const children = [
-        el("span", { className: "lesson-tab-number", text: String(index + 1) }, []),
-        el("span", { className: "lesson-tab-title", text: lesson.shortTitle || lesson.title }, []),
-      ];
-      if (isComplete) {
-        children.push(
-          el("span", { className: "lesson-tab-check", attrs: { "aria-label": "დასრულებულია" }, text: "✓" }, [])
-        );
+  // ==================== პლატფორმა: რაუტინგი და ხედები ====================
+
+  function parseRoute() {
+    const raw = (window.location.hash || "").replace(/^#\/?/, "");
+    const parts = raw.split("/").filter(Boolean);
+    return { view: parts[0] || "home", chapter: parts[1] || null, lesson: parts[2] || null };
+  }
+
+  function setHash(view, chapter, lesson) {
+    let h = "#/" + view;
+    if (chapter) h += "/" + chapter;
+    if (lesson) h += "/" + lesson;
+    if (h !== window.location.hash) {
+      try {
+        window.history.replaceState(null, "", h);
+      } catch (e) {
+        window.location.hash = h.replace(/^#/, "");
       }
-      const button = el(
-        "button",
-        {
-          className:
-            "lesson-tab" +
-            (index === currentLessonIndex ? " is-active" : "") +
-            (isComplete ? " is-complete" : ""),
-          attrs: { type: "button" },
-          on: {
-            click: function () {
-              showLesson(index);
-            },
-          },
-        },
-        children
-      );
-      lessonList.append(el("li", {}, [button]));
+    }
+  }
+
+  function navigate(view, chapter, lesson) {
+    setHash(view, chapter, lesson);
+    render();
+  }
+
+  function lessonIndexById(id) {
+    return lessons.findIndex(function (l) {
+      return l.id === id;
     });
   }
 
-  function showLesson(index) {
-    if (index < 0 || index >= lessons.length) {
-      return;
-    }
-
+  function render() {
     if (cleanupCurrentLesson) {
       cleanupCurrentLesson();
       cleanupCurrentLesson = null;
     }
+    refreshSidebar = null;
 
-    currentLessonIndex = index;
-    const lesson = lessons[index];
-    syncHash(lesson.id);
-    lessonCounter.textContent = "გაკვეთილი " + (index + 1) + " / " + lessons.length;
-    lessonRoot.innerHTML = "";
+    const route = parseRoute();
+    renderTopNav(route.view);
+    appMain.innerHTML = "";
+    appMain.className = "app-main view-" + route.view;
 
+    if (route.view === "course") {
+      appMain.append(renderCourseOrAssignments(route, "course"));
+    } else if (route.view === "assignments") {
+      appMain.append(renderCourseOrAssignments(route, "assignments"));
+    } else if (route.view === "resources") {
+      appMain.append(renderResources());
+    } else {
+      appMain.append(renderHome());
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function renderTopNav(active) {
+    topNav.innerHTML = "";
+    NAV.forEach(function (item) {
+      topNav.append(
+        el("button", {
+          className: "top-nav-item" + (item.id === active ? " is-active" : ""),
+          attrs: { type: "button" },
+          text: item.label,
+          on: {
+            click: function () {
+              if (item.id === "course" || item.id === "assignments") {
+                navigate(item.id, "cfz", null);
+              } else {
+                navigate(item.id, null, null);
+              }
+            },
+          },
+        })
+      );
+    });
+  }
+
+  // ერთი მარცხენა ნავიგაცია — კურსსა და დავალებებში იდენტური.
+  function renderChapterSidebar(mode, activeChapter, activeLesson) {
+    const list = el("ol", { className: "chapter-list" });
+    CHAPTERS.forEach(function (ch, i) {
+      const isActive = ch.id === activeChapter;
+      const head = el("button", {
+        className:
+          "chapter-head" + (isActive ? " is-active" : "") + (ch.available ? "" : " is-locked"),
+        attrs: { type: "button" },
+        on: {
+          click: function () {
+            navigate(mode, ch.id, null);
+          },
+        },
+      }, [
+        el("span", { className: "chapter-num", text: String(i + 1) }),
+        el("span", { className: "chapter-name", text: ch.title }),
+        ch.available ? null : el("span", { className: "chapter-lock", text: "მალე" }),
+      ]);
+      const item = el("li", { className: "chapter-item" }, [head]);
+
+      if (isActive && ch.available && ch.id === "cfz") {
+        const sub = el("ul", { className: "lesson-sublist" });
+        lessons.forEach(function (lesson, li) {
+          const done = completedLessons.has(lesson.id);
+          const btn = el("button", {
+            className:
+              "lesson-subitem" +
+              (lesson.id === activeLesson ? " is-active" : "") +
+              (done ? " is-done" : ""),
+            attrs: { type: "button" },
+            on: {
+              click: function () {
+                navigate(mode, ch.id, lesson.id);
+              },
+            },
+          }, [
+            el("span", { className: "lesson-subnum", text: String(li + 1) }),
+            el("span", { className: "lesson-subtitle", text: lesson.shortTitle || lesson.title }),
+            done ? el("span", { className: "lesson-subcheck", attrs: { "aria-label": "დასრულებულია" }, text: "✓" }) : null,
+          ]);
+          sub.append(el("li", {}, [btn]));
+        });
+        item.append(sub);
+      }
+      list.append(item);
+    });
+
+    const aside = el("aside", { className: "chapter-sidebar", attrs: { "aria-label": "თავები" } });
+    if (mode === "course" && activeChapter === "cfz") {
+      aside.append(renderProgressSummary());
+    }
+    aside.append(list);
+    return aside;
+  }
+
+  function renderProgressSummary() {
+    const total = lessons.length;
+    const done = lessons.filter(function (l) {
+      return completedLessons.has(l.id);
+    }).length;
+    const percent = total ? Math.round((done / total) * 100) : 0;
+    const fill = el("div", { className: "progress-fill" });
+    fill.style.width = percent + "%";
+    return el("div", { className: "progress-summary" }, [
+      el("div", {
+        className: "progress-track",
+        attrs: { role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(percent), "aria-label": "პროგრესი" },
+      }, [fill]),
+      el("p", { className: "progress-caption", text: done + " / " + total + " დასრულებული" }),
+      el("button", {
+        className: "progress-reset",
+        attrs: { type: "button" },
+        text: "პროგრესის განულება",
+        on: {
+          click: function () {
+            completedLessons.clear();
+            saveProgress();
+            if (refreshSidebar) refreshSidebar();
+          },
+        },
+      }),
+    ]);
+  }
+
+  function renderCourseOrAssignments(route, mode) {
+    const chapterId = route.chapter || "cfz";
+    const chapter = CHAPTERS.find(function (c) {
+      return c.id === chapterId;
+    }) || CHAPTERS[0];
+
+    const layout = el("div", { className: "platform-layout" });
+
+    function buildSidebar() {
+      return renderChapterSidebar(mode, chapterId, route.lesson);
+    }
+    let sidebarEl = buildSidebar();
+    refreshSidebar = function () {
+      const fresh = buildSidebar();
+      sidebarEl.replaceWith(fresh);
+      sidebarEl = fresh;
+    };
+
+    let content;
+    if (!chapter.available) {
+      content = renderChapterPlaceholder(chapter, mode);
+    } else if (route.lesson && lessonIndexById(route.lesson) >= 0) {
+      const index = lessonIndexById(route.lesson);
+      content =
+        mode === "course"
+          ? renderLessonPanel(lessons[index], index)
+          : renderExercisePanel(lessons[index], index);
+    } else {
+      content = renderChapterOverview(mode);
+    }
+
+    layout.append(sidebarEl, el("div", { className: "platform-content" }, [content]));
+    return layout;
+  }
+
+  function renderChapterPlaceholder(chapter, mode) {
+    return el("div", { className: "chapter-placeholder" }, [
+      el("div", { className: "section-band" }, [
+        el("p", { className: "lesson-kicker", text: "მალე დაემატება" }),
+        el("h2", { text: chapter.title }),
+        el("p", { className: "state-note", text: "ეს თავი ჯერ არ არის ხელმისაწვდომი. ამჟამად შეგიძლია გაიარო „კომპიუტერი ნულიდან“." }),
+        createButton("კომპიუტერი ნულიდან", "primary", function () {
+          navigate(mode, "cfz", null);
+        }),
+      ]),
+    ]);
+  }
+
+  function renderChapterOverview(mode) {
+    const heading = mode === "course" ? "აირჩიე გაკვეთილი" : "აირჩიე გაკვეთილის დავალებები";
+    const desc =
+      mode === "course"
+        ? "15 ინტერაქტიული გაკვეთილი — ელექტრონიდან CPU-მდე. აირჩიე გაკვეთილი მარცხნივ ან დაიწყე თავიდან."
+        : "თითო გაკვეთილს აქვს თავისი დავალებები. აირჩიე გაკვეთილი მარცხენა ჩამონათვალიდან.";
+    return el("div", { className: "chapter-overview" }, [
+      el("div", { className: "section-band" }, [
+        el("p", { className: "lesson-kicker", text: "თავი 1 · კომპიუტერი ნულიდან" }),
+        el("h2", { text: heading }),
+        el("p", { className: "state-note", text: desc }),
+        lessons[0]
+          ? createButton("პირველი გაკვეთილი", "primary", function () {
+              navigate(mode, "cfz", lessons[0].id);
+            })
+          : null,
+      ]),
+    ]);
+  }
+
+  function renderLessonPanel(lesson, index) {
     const simulationHost = el("div", { className: "sim-card" }, []);
-    const challengeStatus = el(
-      "p",
-      { className: "challenge-status", text: "დავალება ჯერ შესასრულებელია." },
-      []
-    );
+    const challengeStatus = el("p", { className: "challenge-status", text: "დავალება ჯერ შესასრულებელია." }, []);
 
     const setChallengeResult = function (isDone, message) {
       challengeStatus.classList.toggle("is-done", Boolean(isDone));
@@ -450,7 +605,7 @@
 
     const panel = el("article", { className: "lesson-panel" }, [
       el("header", { className: "lesson-heading" }, [
-        el("p", { className: "lesson-kicker", text: "გაკვეთილი " + (index + 1) }, []),
+        el("p", { className: "lesson-kicker", text: "გაკვეთილი " + (index + 1) + " / " + lessons.length }, []),
         el("h2", { text: lesson.title }, []),
       ]),
       el("section", { className: "section-band" }, [
@@ -474,36 +629,164 @@
       ]),
       el("nav", { className: "lesson-actions", attrs: { "aria-label": "გაკვეთილების მართვა" } }, [
         createButton("წინა", "secondary", function () {
-          showLesson(currentLessonIndex - 1);
+          if (index > 0) navigate("course", "cfz", lessons[index - 1].id);
         }),
-        createButton(index === lessons.length - 1 ? "თავიდან დაწყება" : "შემდეგი", "primary", function () {
-          showLesson(index === lessons.length - 1 ? 0 : currentLessonIndex + 1);
+        createButton(index === lessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
+          if (index < lessons.length - 1) navigate("course", "cfz", lessons[index + 1].id);
         }),
       ]),
     ]);
 
-    lessonRoot.append(panel);
-    const previousButton = panel.querySelector(".lesson-actions .secondary-button");
-    previousButton.disabled = index === 0;
+    const prevButton = panel.querySelector(".lesson-actions .secondary-button");
+    prevButton.disabled = index === 0;
+    if (index === lessons.length - 1) {
+      panel.querySelector(".lesson-actions .primary-button").disabled = true;
+    }
 
     cleanupCurrentLesson = lesson.createSimulation(simulationHost, setChallengeResult) || null;
-    renderLessonList();
-    window.scrollTo({ top: 0, behavior: "auto" });
+    return panel;
   }
 
-  function createInfoBox(title, text) {
-    return el("div", { className: "info-box" }, [
-      el("strong", { text: title }, []),
-      el("p", { text }, []),
+  function levelLabel(level) {
+    return level === "hard" ? "🔴 რთული" : level === "medium" ? "🟡 საშუალო" : "🟢 მარტივი";
+  }
+
+  function renderExercisePanel(lesson, index) {
+    const data = exercises[lesson.id];
+    const panel = el("article", { className: "exercise-panel" }, [
+      el("header", { className: "lesson-heading" }, [
+        el("p", { className: "lesson-kicker", text: "დავალებები · გაკვეთილი " + (index + 1) }, []),
+        el("h2", { text: lesson.title }, []),
+      ]),
+    ]);
+
+    if (!data || !data.tasks || !data.tasks.length) {
+      panel.append(
+        el("section", { className: "section-band" }, [
+          el("p", { className: "state-note", text: "ამ გაკვეთილის დავალებები მალე დაემატება." }),
+        ])
+      );
+      return panel;
+    }
+
+    const list = el("ol", { className: "exercise-list" });
+    data.tasks.forEach(function (t) {
+      list.append(
+        el("li", { className: "exercise-item" }, [
+          el("span", { className: "exercise-level level-" + (t.level || "easy"), text: levelLabel(t.level) }),
+          el("span", { className: "exercise-text", text: t.q }),
+        ])
+      );
+    });
+    panel.append(el("section", { className: "section-band" }, [el("h3", { text: "დავალებები" }), list]));
+
+    if (data.answers && data.answers.length) {
+      const ansList = el("ul", { className: "answer-list" });
+      data.answers.forEach(function (a) {
+        ansList.append(el("li", { text: a }));
+      });
+      panel.append(
+        el("details", { className: "exercise-answers" }, [
+          el("summary", { text: "პასუხები (გადასამოწმებლად)" }),
+          ansList,
+        ])
+      );
+    }
+
+    panel.append(
+      el("nav", { className: "lesson-actions" }, [
+        createButton("წინა", "secondary", function () {
+          if (index > 0) navigate("assignments", "cfz", lessons[index - 1].id);
+        }),
+        createButton(index === lessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
+          if (index < lessons.length - 1) navigate("assignments", "cfz", lessons[index + 1].id);
+        }),
+      ])
+    );
+    const prev = panel.querySelector(".lesson-actions .secondary-button");
+    prev.disabled = index === 0;
+    if (index === lessons.length - 1) {
+      panel.querySelector(".lesson-actions .primary-button").disabled = true;
+    }
+    return panel;
+  }
+
+  function renderHome() {
+    const hero = el("section", { className: "home-hero" }, [
+      el("p", { className: "course-name", text: "TSRE · სასწავლო პლატფორმა" }),
+      el("h1", { text: "ისწავლე ნულიდან" }),
+      el("p", { className: "home-lead", text: "ინტერაქტიული კურსები — კომპიუტერის საფუძვლებიდან ვებ-დეველოპმენტამდე. თითო თავი ცოცხალი სიმულაციებით და დავალებებით." }),
+      el("div", { className: "home-cta" }, [
+        createButton("კურსის დაწყება", "primary", function () {
+          navigate("course", "cfz", lessons[0] ? lessons[0].id : null);
+        }),
+        createButton("დავალებები", "secondary", function () {
+          navigate("assignments", "cfz", lessons[0] ? lessons[0].id : null);
+        }),
+      ]),
+    ]);
+
+    const grid = el("div", { className: "home-chapters" });
+    CHAPTERS.forEach(function (ch, i) {
+      grid.append(
+        el("button", {
+          className: "home-chapter" + (ch.available ? "" : " is-locked"),
+          attrs: { type: "button" },
+          on: {
+            click: function () {
+              navigate("course", ch.id, null);
+            },
+          },
+        }, [
+          el("span", { className: "home-chapter-num", text: String(i + 1) }),
+          el("span", { className: "home-chapter-title", text: ch.title }),
+          el("span", { className: "home-chapter-meta", text: ch.available ? lessons.length + " გაკვეთილი" : "მალე" }),
+        ])
+      );
+    });
+
+    return el("div", { className: "home-view" }, [
+      hero,
+      el("section", { className: "home-section" }, [el("h2", { text: "თავები" }), grid]),
     ]);
   }
+
+  function renderResources() {
+    const links = [
+      { title: "GitHub რეპოზიტორია", desc: "კურსის სრული კოდი", href: "https://github.com/Datodarchiashvili123/CS" },
+      { title: "MDN Web Docs", desc: "HTML / CSS / JS ოფიციალური დოკუმენტაცია", href: "https://developer.mozilla.org/" },
+      { title: "CS50 · Harvard", desc: "კომპიუტერული მეცნიერების შესავალი", href: "https://cs50.harvard.edu/" },
+      { title: "Nand2Tetris", desc: "კომპიუტერის აგება ლოგიკური კარიბჭეებიდან", href: "https://www.nand2tetris.org/" },
+      { title: "Ben Eater", desc: "ვიდეოები — CPU და ელექტრონიკა ნულიდან", href: "https://eater.net/" },
+    ];
+    const grid = el("div", { className: "resource-grid" });
+    links.forEach(function (l) {
+      grid.append(
+        el("a", {
+          className: "resource-card",
+          attrs: { href: l.href, target: "_blank", rel: "noopener noreferrer" },
+        }, [
+          el("strong", { text: l.title }),
+          el("span", { className: "resource-desc", text: l.desc }),
+          el("span", { className: "resource-arrow", attrs: { "aria-hidden": "true" }, text: "↗" }),
+        ])
+      );
+    });
+    return el("div", { className: "resources-view" }, [
+      el("header", { className: "lesson-heading" }, [
+        el("p", { className: "lesson-kicker", text: "სასარგებლო ბმულები და მასალა" }),
+        el("h2", { text: "რესურსები" }),
+      ]),
+      el("section", { className: "section-band" }, [grid]),
+    ]);
+  }
+
+  // ==================== პროგრესი ====================
 
   function loadProgress() {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        return new Set();
-      }
+      if (!raw) return new Set();
       const parsed = JSON.parse(raw);
       return new Set(Array.isArray(parsed) ? parsed : []);
     } catch (error) {
@@ -515,105 +798,42 @@
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(completedLessons)));
     } catch (error) {
-      /* storage may be unavailable (private mode, file://); progress stays in-memory. */
+      /* storage unavailable */
     }
   }
 
   function markLessonComplete(id) {
-    if (!id || completedLessons.has(id)) {
-      return;
-    }
+    if (!id || completedLessons.has(id)) return;
     completedLessons.add(id);
     saveProgress();
-    updateProgressSummary();
-    renderLessonList();
+    if (refreshSidebar) refreshSidebar();
   }
 
-  function updateProgressSummary() {
-    const total = lessons.length;
-    const done = lessons.filter(function (lesson) {
-      return completedLessons.has(lesson.id);
-    }).length;
-    const percent = total ? Math.round((done / total) * 100) : 0;
-
-    if (progressFill) {
-      progressFill.style.width = percent + "%";
-    }
-    if (progressTrack) {
-      progressTrack.setAttribute("aria-valuenow", String(percent));
-    }
-    if (progressCaption) {
-      progressCaption.textContent = done + " / " + total + " დასრულებული";
-    }
-  }
-
-  function lessonIndexFromHash() {
-    const raw = (window.location.hash || "").replace(/^#/, "");
-    if (!raw) {
-      return 0;
-    }
-    const byId = lessons.findIndex(function (lesson) {
-      return lesson.id === raw;
-    });
-    if (byId >= 0) {
-      return byId;
-    }
-    const asNumber = parseInt(raw.replace(/^lesson-/, ""), 10);
-    if (!isNaN(asNumber) && asNumber >= 1 && asNumber <= lessons.length) {
-      return asNumber - 1;
-    }
-    return 0;
-  }
-
-  function syncHash(id) {
-    if (!id || ("#" + id) === window.location.hash) {
-      return;
-    }
-    try {
-      window.history.replaceState(null, "", "#" + id);
-    } catch (error) {
-      window.location.hash = id;
-    }
-  }
-
-  if (lessons.length === 0) {
-    lessonRoot.textContent = "გაკვეთილები ვერ ჩაიტვირთა.";
-    return;
-  }
+  // ==================== bootstrap ====================
 
   document.addEventListener("keydown", function (event) {
-    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
-      return;
-    }
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
     const target = event.target;
     const tag = target && target.tagName ? target.tagName : "";
-    if (tag === "INPUT" || tag === "TEXTAREA" || (target && target.isContentEditable)) {
-      return;
-    }
-    if (event.key === "ArrowRight") {
-      showLesson(currentLessonIndex + 1);
-    } else if (event.key === "ArrowLeft") {
-      showLesson(currentLessonIndex - 1);
-    }
-  });
-
-  window.addEventListener("hashchange", function () {
-    const index = lessonIndexFromHash();
-    if (index !== currentLessonIndex) {
-      showLesson(index);
+    if (tag === "INPUT" || tag === "TEXTAREA" || (target && target.isContentEditable)) return;
+    const route = parseRoute();
+    if (route.view !== "course" || !route.lesson) return;
+    const index = lessonIndexById(route.lesson);
+    if (index < 0) return;
+    if (event.key === "ArrowRight" && index < lessons.length - 1) {
+      navigate("course", "cfz", lessons[index + 1].id);
+    } else if (event.key === "ArrowLeft" && index > 0) {
+      navigate("course", "cfz", lessons[index - 1].id);
     }
   });
 
-  if (progressReset) {
-    progressReset.addEventListener("click", function () {
-      completedLessons.clear();
-      saveProgress();
-      updateProgressSummary();
-      renderLessonList();
+  window.addEventListener("hashchange", render);
+
+  if (brandBtn) {
+    brandBtn.addEventListener("click", function () {
+      navigate("home", null, null);
     });
   }
 
-  updateProgressSummary();
-  renderLessonList();
-  showLesson(lessonIndexFromHash());
+  render();
 })();

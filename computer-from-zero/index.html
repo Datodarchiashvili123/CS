@@ -4,61 +4,39 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Computer From Zero</title>
-    <link rel="stylesheet" href="style.css?v=14" />
+    <link rel="stylesheet" href="style.css?v=16" />
   </head>
   <body>
     <div id="loginScreen" class="login-screen"></div>
 
     <header class="top-bar">
-      <div>
-        <p class="course-name">Computer From Zero</p>
-        <h1>კომპიუტერი ნულიდან</h1>
-      </div>
-      <div class="top-bar-right">
-        <p class="lesson-counter" id="lessonCounter">გაკვეთილი 1 / 10</p>
-        <div class="top-bar-user" id="topBarUser"></div>
-      </div>
+      <button class="brand" type="button" id="brandBtn" aria-label="მთავარი">
+        <span class="brand-mark">TSRE</span>
+        <span class="brand-sub">სასწავლო</span>
+      </button>
+      <nav class="top-nav" id="topNav" aria-label="მთავარი ნავიგაცია"></nav>
+      <div class="top-bar-user" id="topBarUser"></div>
     </header>
 
-    <main class="app-shell">
-      <aside class="lesson-sidebar" aria-label="გაკვეთილების სია">
-        <div class="progress-summary">
-          <div
-            class="progress-track"
-            role="progressbar"
-            aria-label="კურსის პროგრესი"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="0"
-            id="progressTrack"
-          >
-            <div class="progress-fill" id="progressFill"></div>
-          </div>
-          <p class="progress-caption" id="progressCaption">0 / 0 დასრულებული</p>
-          <button type="button" class="progress-reset" id="progressReset">პროგრესის განულება</button>
-        </div>
-        <ol id="lessonList" class="lesson-list"></ol>
-      </aside>
+    <main id="appMain" class="app-main" aria-live="polite"></main>
 
-      <section id="lessonRoot" class="lesson-root" aria-live="polite"></section>
-    </main>
-
-    <script src="lessons/electricity.js?v=14" defer></script>
-    <script src="lessons/binary.js?v=14" defer></script>
-    <script src="lessons/transistor.js?v=14" defer></script>
-    <script src="lessons/not-gate.js?v=14" defer></script>
-    <script src="lessons/and-gate.js?v=14" defer></script>
-    <script src="lessons/or-gate.js?v=14" defer></script>
-    <script src="lessons/xor-gate.js?v=14" defer></script>
-    <script src="lessons/half-adder.js?v=14" defer></script>
-    <script src="lessons/full-adder.js?v=14" defer></script>
-    <script src="lessons/memory.js?v=14" defer></script>
-    <script src="lessons/alu.js?v=14" defer></script>
-    <script src="lessons/cpu.js?v=14" defer></script>
-    <script src="lessons/program.js?v=14" defer></script>
-    <script src="lessons/cache.js?v=14" defer></script>
-    <script src="lessons/recap.js?v=14" defer></script>
-    <script src="auth.js?v=14" defer></script>
-    <script src="app.js?v=14" defer></script>
+    <script src="lessons/electricity.js?v=16" defer></script>
+    <script src="lessons/binary.js?v=16" defer></script>
+    <script src="lessons/transistor.js?v=16" defer></script>
+    <script src="lessons/not-gate.js?v=16" defer></script>
+    <script src="lessons/and-gate.js?v=16" defer></script>
+    <script src="lessons/or-gate.js?v=16" defer></script>
+    <script src="lessons/xor-gate.js?v=16" defer></script>
+    <script src="lessons/half-adder.js?v=16" defer></script>
+    <script src="lessons/full-adder.js?v=16" defer></script>
+    <script src="lessons/memory.js?v=16" defer></script>
+    <script src="lessons/alu.js?v=16" defer></script>
+    <script src="lessons/cpu.js?v=16" defer></script>
+    <script src="lessons/program.js?v=16" defer></script>
+    <script src="lessons/cache.js?v=16" defer></script>
+    <script src="lessons/recap.js?v=16" defer></script>
+    <script src="exercises.js?v=16" defer></script>
+    <script src="auth.js?v=16" defer></script>
+    <script src="app.js?v=16" defer></script>
   </body>
 </html>
