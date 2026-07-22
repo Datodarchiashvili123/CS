@@ -2516,3 +2516,96 @@ body:not([data-authed]) .app-main {
     justify-content: flex-start;
   }
 }
+
+/* ==================== ხიდ-გაკვეთილი: ორი მდგომარეობა ==================== */
+.twostate-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  align-items: center;
+}
+.twostate-controls {
+  display: grid;
+  gap: 14px;
+  min-width: 220px;
+  flex: 1;
+}
+.control-label {
+  font-weight: 700;
+  color: var(--muted);
+}
+.voltage-slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.twostate-meter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.voltage-meter {
+  position: relative;
+  width: 46px;
+  height: 170px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+.vm-fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 80%;
+  background: linear-gradient(180deg, var(--muted), var(--border));
+  transition: height 90ms linear;
+}
+.vm-fill.is-high {
+  background: linear-gradient(180deg, var(--electron), var(--accent));
+}
+.vm-threshold {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 50%;
+  height: 0;
+  border-top: 2px dashed var(--danger);
+  z-index: 2;
+}
+
+/* ==================== ხიდ-გაკვეთილი: მრავალბიტიანი ==================== */
+.mb-adder,
+.mb-register {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.mb-register {
+  margin-top: 16px;
+}
+.mb-adder h4,
+.mb-register h4 {
+  margin: 0;
+}
+.mb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mb-row-label {
+  min-width: 68px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.mb-bits,
+.mb-chain {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
