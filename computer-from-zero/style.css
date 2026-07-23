@@ -2755,3 +2755,23 @@ body:not([data-authed]) .app-main {
   border-radius: 5px;
   padding: 1px 5px;
 }
+
+/* ==================== CSS თავი: სამპანელიანი პლეიგრაუნდი ==================== */
+.playground-css {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+.markup-view {
+  margin: 0;
+  min-height: 120px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}

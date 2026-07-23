@@ -9,6 +9,7 @@
   const COURSES = {
     cfz: window.ComputerFromZeroLessons || [],
     html: window.HtmlLessons || [],
+    css: window.CssLessons || [],
   };
   function lessonsFor(chapterId) {
     return COURSES[chapterId] || [];
@@ -25,7 +26,7 @@
   const CHAPTERS = [
     { id: "cfz", title: "კომპიუტერი ნულიდან", available: true },
     { id: "html", title: "HTML", available: true },
-    { id: "css", title: "CSS", available: false },
+    { id: "css", title: "CSS", available: true },
     { id: "js", title: "JavaScript", available: false },
   ];
 
@@ -54,6 +55,9 @@
     createSchematicPart,
     schematicGate,
     createCodePlayground,
+    createStylePlayground,
+    rgbOf,
+    isColorNear,
     goToLesson,
     wait,
   };
@@ -429,6 +433,115 @@
       },
       refresh: render,
     };
+  }
+
+  // CSS პლეიგრაუნდი: მარკაპი + ცოცხალი სტილი. onCheck(doc, win, cssText)
+  // გამოთვლილ სტილზე მუშაობს, ამიტომ ამოწმებს, მართლა გამოიყენა თუ არა წესი.
+  function createStylePlayground(html, css, onCheck, options) {
+    const opts = options || {};
+
+    const cssArea = el("textarea", {
+      className: "code-editor",
+      attrs: { spellcheck: "false", rows: "12", "aria-label": "CSS კოდი" },
+    });
+    cssArea.value = css || "";
+
+    const htmlArea = opts.editableHtml
+      ? el("textarea", {
+          className: "code-editor",
+          attrs: { spellcheck: "false", rows: "6", "aria-label": "HTML კოდი" },
+        })
+      : el("pre", { className: "markup-view" });
+    if (opts.editableHtml) {
+      htmlArea.value = html || "";
+    } else {
+      htmlArea.textContent = html || "";
+    }
+
+    const frame = el("iframe", {
+      className: "code-preview",
+      attrs: { title: "შედეგი", sandbox: "allow-same-origin" },
+    });
+
+    const RESET =
+      "*{box-sizing:border-box}body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;" +
+      "margin:0;padding:14px;color:#172033;background:#fff;line-height:1.55}";
+
+    function currentHtml() {
+      return opts.editableHtml ? htmlArea.value : html || "";
+    }
+
+    function render() {
+      frame.srcdoc =
+        "<!doctype html><html><head><meta charset='utf-8'><style>" +
+        RESET +
+        "</style><style>" +
+        cssArea.value +
+        "</style></head><body>" +
+        currentHtml() +
+        "</body></html>";
+    }
+
+    frame.addEventListener("load", function () {
+      if (!onCheck) return;
+      try {
+        const doc = frame.contentDocument;
+        if (doc) onCheck(doc, frame.contentWindow, cssArea.value);
+      } catch (error) {
+        /* გადახედვა ჯერ არ არის მზად */
+      }
+    });
+
+    cssArea.addEventListener("input", render);
+    if (opts.editableHtml) htmlArea.addEventListener("input", render);
+    window.setTimeout(render, 0);
+
+    const panes = [
+      el("div", { className: "playground-pane" }, [
+        el("span", {
+          className: "playground-label",
+          text: opts.editableHtml ? "HTML — შეგიძლია შეცვალო" : "HTML (მოცემულია)",
+        }),
+        htmlArea,
+      ]),
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "CSS — დაწერე აქ" }),
+        cssArea,
+      ]),
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "შედეგი" }),
+        frame,
+      ]),
+    ];
+
+    return {
+      element: el("div", { className: "playground playground-css" }, panes),
+      getCss: function () {
+        return cssArea.value;
+      },
+      setCss: function (value) {
+        cssArea.value = value;
+        render();
+      },
+      refresh: render,
+    };
+  }
+
+  // დამხმარეები CSS-ის შესამოწმებლად
+  function rgbOf(color) {
+    const m = String(color).match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const parts = m[1].split(",").map(function (n) {
+      return Math.round(parseFloat(n));
+    });
+    return { r: parts[0], g: parts[1], b: parts[2] };
+  }
+
+  function isColorNear(actual, r, g, b, tolerance) {
+    const c = rgbOf(actual);
+    if (!c) return false;
+    const t = tolerance === undefined ? 40 : tolerance;
+    return Math.abs(c.r - r) <= t && Math.abs(c.g - g) <= t && Math.abs(c.b - b) <= t;
   }
 
   function createInfoBox(title, text) {

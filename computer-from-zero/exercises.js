@@ -255,6 +255,247 @@ window.CFZExercises = {
     ],
   },
 
+  // ===================== თავი 3 — CSS =====================
+  "css-intro": {
+    tasks: [
+      { level: "easy", q: "დაასახელე CSS წესის სამი ნაწილი მაგალითზე h1 { color: red; }" },
+      { level: "easy", q: "სამი გზიდან CSS-ის მისაბმელად რომელი ჯობია და რატომ?" },
+      { level: "medium", q: "რატომ არის inline style ცუდი პრაქტიკა?" },
+    ],
+    answers: [
+      "სელექტორი (h1), თვისება (color), მნიშვნელობა (red).",
+      "გარე ფაილი <link>-ით — ერთი ფაილი ბევრ გვერდს ემსახურება და ქეშირდება.",
+      "არ მეორდება, ძნელი შესაცვლელია და სპეციფიკურობით ყველაფერს ჯაბნის.",
+    ],
+  },
+  "css-selectors": {
+    tasks: [
+      { level: "easy", q: "როგორ ავირჩევთ კლასს, id-ს და ტეგს? დაწერე სამივე." },
+      { level: "medium", q: "რატომ იყენებენ სტილისთვის ძირითადად კლასს და არა id-ს?" },
+      { level: "medium", q: "დაწერე სელექტორი, რომელიც მხოლოდ type=\"email\" ველს აირჩევს." },
+    ],
+    answers: [".klasi { }, #id { }, p { }", "კლასი მრავალჯერ გამოიყენება და სპეციფიკურობა დაბალი აქვს — ადვილი გადასაწერია.", 'input[type="email"] { }'],
+  },
+  "css-combinators": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა „nav a“-სა და „nav > a“-ს შორის?" },
+      { level: "medium", q: "რა განსხვავებაა „.a .b“-სა და „.a.b“-ს შორის?" },
+    ],
+    answers: [
+      "პირველი ყველა შთამომავალს ირჩევს, მეორე — მხოლოდ პირდაპირ შვილს.",
+      ".a .b — b ელემენტი a-ს შიგნით; .a.b — ერთი ელემენტი, რომელსაც ორივე კლასი აქვს.",
+    ],
+  },
+  "css-pseudo-classes": {
+    tasks: [
+      { level: "easy", q: "რატომ უნდა დაიწეროს :focus ყოველთვის :hover-თან ერთად?" },
+      { level: "medium", q: "დაწერე სელექტორი ცხრილის ლუწი სტრიქონებისთვის." },
+    ],
+    answers: [":hover მხოლოდ მაუსით მუშაობს — კლავიატურის მომხმარებელს :focus სჭირდება.", "tr:nth-child(even) { }"],
+  },
+  "css-pseudo-elements": {
+    tasks: [
+      { level: "easy", q: "რის გარეშე არ იმუშავებს ::before და ::after?" },
+      { level: "medium", q: "დაწერე წესი, რომელიც სავალდებულო ველის წარწერას წითელ ვარსკვლავს დაუმატებს." },
+    ],
+    answers: ["content თვისების გარეშე (თუნდაც ცარიელი: content: \"\").", 'label.required::after { content: " *"; color: red; }'],
+  },
+  "css-cascade": {
+    tasks: [
+      { level: "easy", q: "დაალაგე სპეციფიკურობით: .klasi, #id, p" },
+      { level: "medium", q: "ორივე წესს ერთნაირი სპეციფიკურობა აქვს — რომელი გაიმარჯვებს?" },
+      { level: "hard", q: "რატომ ითვლება !important ცუდ პრაქტიკად?" },
+    ],
+    answers: ["#id (100) > .klasi (10) > p (1).", "ის, რომელიც ფაილში ბოლოს წერია.", "კასკადს არღვევს და შემდეგ მისი გადაფარვა მხოლოდ კიდევ ერთი !important-ით შეიძლება."],
+  },
+  "css-inheritance": {
+    tasks: [
+      { level: "easy", q: "დაასახელე 2 თვისება, რომელიც მემკვიდრეობს, და 2 — რომელიც არა." },
+      { level: "medium", q: "რატომ არ იღებს <button> გვერდის შრიფტს ავტომატურად?" },
+    ],
+    answers: ["მემკვიდრეობს: color, font-family; არა: margin, border.", "ფორმის ელემენტებს ბრაუზერის საკუთარი სტილი აქვთ — საჭიროა font: inherit."],
+  },
+  "css-colors": {
+    tasks: [
+      { level: "easy", q: "დაასახელე ფერის ჩაწერის 3 ფორმატი." },
+      { level: "medium", q: "რა განსხვავებაა opacity-სა და rgba-ს შორის?" },
+      { level: "medium", q: "რატომ არის hsl მოსახერხებელი ღია/მუქი ვარიანტების შესაქმნელად?" },
+    ],
+    answers: ["hex (#e63946), rgb(), hsl() (ასევე სახელი).", "opacity მთელ ელემენტს გაამჭვირვალებს შვილებთან ერთად; rgba — მხოლოდ ამ ფერს.", "საკმარისია მესამე რიცხვის (სიკაშკაშის) შეცვლა, ტონი უცვლელი რჩება."],
+  },
+  "css-units": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა em-სა და rem-ს შორის?" },
+      { level: "medium", q: "რატომ ჯობია შრიფტისთვის rem და არა px?" },
+      { level: "medium", q: "რას ნიშნავს 50vw?" },
+    ],
+    answers: ["em მშობლის/მიმდინარე შრიფტს ეყრდნობა და გროვდება; rem — მხოლოდ ფესვის (html) შრიფტს.", "მომხმარებლის ბრაუზერში გაზრდილი შრიფტი პროპორციულად იმუშავებს.", "ეკრანის სიგანის 50%."],
+  },
+  "css-text": {
+    tasks: [
+      { level: "easy", q: "რატომ იწერება line-height უერთეულოდ?" },
+      { level: "medium", q: "რამდენი სიმბოლო ითვლება ოპტიმალურ სტრიქონის სიგრძედ და როგორ მიიღწევა?" },
+    ],
+    answers: ["რომ სწორად გამრავლდეს ნებისმიერ შრიფტის ზომაზე.", "45–75 სიმბოლო; max-width: 65ch."],
+  },
+  "css-fonts": {
+    tasks: [
+      { level: "easy", q: "რატომ იწერება font-family-ში რამდენიმე შრიფტი?" },
+      { level: "medium", q: "რა პრობლემა შეიძლება შეიქმნას ქართულ ტექსტთან გარე შრიფტის გამოყენებისას?" },
+    ],
+    answers: ["სათადარიგოდ — თუ პირველი არ არის, ბრაუზერი შემდეგს აიღებს; ბოლოს ზოგადი ოჯახი.", "შრიფტს შეიძლება ქართული ასოები არ ჰქონდეს და ტექსტი ჩანაცვლდეს."],
+  },
+  "css-box-model": {
+    tasks: [
+      { level: "easy", q: "დაასახელე ბოქს-მოდელის ოთხი ფენა შიგნიდან გარეთ." },
+      { level: "medium", q: "რას აკეთებს box-sizing: border-box და რატომ იყენებენ ყველგან?" },
+      { level: "hard", q: "width: 300px, padding: 20px, border: 5px — რა იქნება რეალური სიგანე ორივე რეჟიმში?" },
+    ],
+    answers: [
+      "content, padding, border, margin.",
+      "padding-სა და border-ს სიგანეში ითვლის — ზომები პროგნოზირებადი ხდება.",
+      "content-box: 350px; border-box: 300px.",
+    ],
+  },
+  "css-spacing": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა margin-სა და padding-ს შორის?" },
+      { level: "easy", q: "რას ნიშნავს padding: 10px 20px?" },
+      { level: "medium", q: "როგორ დავაცენტროთ ბლოკი ჰორიზონტალურად?" },
+    ],
+    answers: ["padding შიგნითაა (ფონის ქვეშ), margin — გარეთ და გამჭვირვალე.", "ზემოთ/ქვემოთ 10px, მარცხნივ/მარჯვნივ 20px.", "width მიეცი და margin: 0 auto."],
+  },
+  "css-borders": {
+    tasks: [
+      { level: "easy", q: "რატომ არ ჩანს საზღვარი, თუ მხოლოდ სისქე და ფერი დაწერე?" },
+      { level: "medium", q: "როგორ ვაქციოთ სურათი წრედ?" },
+      { level: "medium", q: "რა განსხვავებაა border-სა და outline-ს შორის?" },
+    ],
+    answers: ["border-style აკლია (მაგ. solid).", "ერთნაირი width/height + border-radius: 50%.", "outline ადგილს არ იკავებს და განლაგებას არ ცვლის — ფოკუსისთვისაა."],
+  },
+  "css-backgrounds": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა background-size-ის cover და contain მნიშვნელობებს შორის?" },
+      { level: "medium", q: "რატომ იწერება გრადიენტი background-image-ში და არა background-color-ში?" },
+    ],
+    answers: ["cover ავსებს (შეიძლება მოიჭრას), contain მთლიანად ატევს (შეიძლება ცარიელი დარჩეს).", "გრადიენტი ტექნიკურად სურათია, არა ერთი ფერი."],
+  },
+  "css-display": {
+    tasks: [
+      { level: "easy", q: "რატომ არ მოქმედებს width inline ელემენტზე?" },
+      { level: "medium", q: "რა განსხვავებაა display: none-სა და visibility: hidden-ს შორის?" },
+      { level: "medium", q: "როგორ ვაქციოთ ბმული ღილაკად?" },
+    ],
+    answers: ["inline ელემენტი ტექსტის ნაკადშია და ზომებს არ იღებს.", "none სრულად შლის ნაკადიდან; hidden მალავს, მაგრამ ადგილს ტოვებს.", "display: inline-block + padding + ფონი."],
+  },
+  "css-position": {
+    tasks: [
+      { level: "easy", q: "დაასახელე position-ის 5 მნიშვნელობა." },
+      { level: "medium", q: "რის მიმართ პოზიციონირდება absolute ელემენტი?" },
+      { level: "hard", q: "რატომ არ მუშაობს z-index static ელემენტზე?" },
+    ],
+    answers: [
+      "static, relative, absolute, fixed, sticky.",
+      "უახლოესი წინაპრის მიმართ, რომელსაც position არა static აქვს (თუ არაა — გვერდის მიმართ).",
+      "z-index მხოლოდ პოზიციონირებულ ელემენტებზე მოქმედებს.",
+    ],
+  },
+  "css-flex-basics": {
+    tasks: [
+      { level: "easy", q: "როგორ დავაცენტროთ ელემენტი ჰორიზონტალურად და ვერტიკალურად flex-ით?" },
+      { level: "medium", q: "flex-direction: column-ზე რომელ ღერძზე მოქმედებს justify-content?" },
+    ],
+    answers: ["display: flex; justify-content: center; align-items: center;", "ვერტიკალურზე — ღერძები ადგილს იცვლიან."],
+  },
+  "css-flex-advanced": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს flex-wrap: wrap?" },
+      { level: "medium", q: "რას ნიშნავს flex: 1 (სამი თვისების ენაზე)?" },
+      { level: "medium", q: "როგორ მივაწებოთ ერთი ელემენტი მარჯვნივ flex კონტეინერში?" },
+    ],
+    answers: ["ელემენტებს, რომლებიც არ ეტევა, ახალ ხაზზე გადაიტანს.", "flex-grow: 1; flex-shrink: 1; flex-basis: 0%.", "margin-left: auto."],
+  },
+  "css-grid-basics": {
+    tasks: [
+      { level: "easy", q: "რას ნიშნავს 1fr?" },
+      { level: "easy", q: "დაწერე სამსვეტიანი ბადე repeat()-ით." },
+      { level: "medium", q: "როდის ავირჩიოთ Grid და როდის Flexbox?" },
+    ],
+    answers: ["დარჩენილი თავისუფალი სივრცის ერთი წილი.", "grid-template-columns: repeat(3, 1fr);", "Grid — ორი განზომილება (კარკასი, ბადე); Flexbox — ერთი (რიგი/სვეტი)."],
+  },
+  "css-grid-advanced": {
+    tasks: [
+      { level: "easy", q: "როგორ დავაკავებინოთ ელემენტს ორი სვეტი?" },
+      { level: "medium", q: "ახსენი, რას აკეთებს repeat(auto-fit, minmax(200px, 1fr))." },
+    ],
+    answers: ["grid-column: span 2;", "ქმნის რესპონსიულ ბადეს: სვეტი მინიმუმ 200px, რაოდენობა ეკრანს ავტომატურად ერგება — media query-ის გარეშე."],
+  },
+  "css-responsive": {
+    tasks: [
+      { level: "easy", q: "დაწერე media query, რომელიც 700px-ზე ფართო ეკრანზე ჩაირთვება." },
+      { level: "medium", q: "რას ნიშნავს mobile-first და რატომ ჯობია?" },
+      { level: "medium", q: "რომელი meta ტეგის გარეშე არ იმუშავებს media query მობილურზე?" },
+    ],
+    answers: ["@media (min-width: 700px) { … }", "ჯერ ვიწრო ეკრანის სტილი, მერე min-width-ით დამატება — კოდი უფრო მარტივია.", '<meta name="viewport" content="width=device-width, initial-scale=1">'],
+  },
+  "css-variables": {
+    tasks: [
+      { level: "easy", q: "როგორ გამოვაცხადოთ და გამოვიყენოთ CSS ცვლადი?" },
+      { level: "medium", q: "როგორ გამოიყენება ცვლადები მუქი თემისთვის?" },
+    ],
+    answers: [":root { --main: #333; } შემდეგ color: var(--main);", "თემის სელექტორში ცვლადებს გადააწერ: [data-theme=\"dark\"] { --bg: #0f141c; }"],
+  },
+  "css-transform": {
+    tasks: [
+      { level: "easy", q: "დაასახელე transform-ის 3 ფუნქცია." },
+      { level: "medium", q: "რატომ ჯობია ანიმაციისთვის transform და არა margin/top?" },
+    ],
+    answers: ["translate, rotate, scale (ასევე skew).", "transform-ს ვიდეობარათი ამუშავებს და განლაგების გადათვლა არ სჭირდება — ანიმაცია რბილია."],
+  },
+  "css-transition": {
+    tasks: [
+      { level: "easy", q: "დაასახელე transition-ის ოთხი ნაწილი." },
+      { level: "medium", q: "სად უნდა დაიწეროს transition — ჩვეულებრივ მდგომარეობაზე თუ :hover-ზე? რატომ?" },
+    ],
+    answers: ["თვისება, ხანგრძლივობა, რიტმი (timing), დაყოვნება.", "ჩვეულებრივზე — მაშინ ანიმაცია ორივე მიმართულებით რბილია."],
+  },
+  "css-animation": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა transition-სა და @keyframes ანიმაციას შორის?" },
+      { level: "medium", q: "როგორ გავითვალისწინოთ მომხმარებლები, ვისაც მოძრაობა აწუხებს?" },
+    ],
+    answers: ["transition ორ მდგომარეობას შორის მუშაობს; @keyframes მრავალსაფეხურიან ანიმაციას აღწერს.", "@media (prefers-reduced-motion: reduce) — ანიმაციების გამორთვა."],
+  },
+  "css-organization": {
+    tasks: [
+      { level: "easy", q: "ახსენი BEM-ის სამი ნაწილი მაგალითით." },
+      { level: "medium", q: "რატომ ჯობია class=\"gafrtxileba\" ვიდრე class=\"witeli\"?" },
+    ],
+    answers: [".card (ბლოკი), .card__title (ელემენტი), .card--wide (მოდიფიკატორი).", "სახელი დანიშნულებას აღწერს — ფერი შეიძლება შეიცვალოს, დანიშნულება არა."],
+  },
+  "css-devtools": {
+    tasks: [
+      { level: "easy", q: "როგორ გავიგოთ DevTools-ში, რომელმა წესმა გადაფარა ჩვენი სტილი?" },
+      { level: "medium", q: "ჩამოთვალე 4 რამ, რასაც შეამოწმებ, როცა CSS წესი არ მუშაობს." },
+    ],
+    answers: [
+      "Styles პანელში გადახაზული დეკლარაცია ნიშნავს, რომ სხვამ გადაფარა; Computed საბოლოო მნიშვნელობას აჩვენებს.",
+      "სელექტორი სწორია? სხვა წესი ხომ არ ჯაბნის? წერტილმძიმე? ფაილი მიბმულია?",
+    ],
+  },
+  "css-recap": {
+    tasks: [
+      { level: "medium", q: "ააწყვე გვერდი: header, ბარათების რესპონსიული ბადე და :hover ეფექტი." },
+      { level: "hard", q: "აიღე მოწონებული საიტის ერთი ბლოკი და გაიმეორე ნულიდან." },
+    ],
+  },
+  "css-resources": {
+    tasks: [
+      { level: "easy", q: "გაიარე Flexbox Froggy-ის პირველი 10 დონე." },
+      { level: "medium", q: "გაიარე Grid Garden და ჩამოწერე, რა გაიგე auto-fit-ზე." },
+    ],
+  },
+
   // ===================== თავი 1 — კომპიუტერი ნულიდან =====================
   electricity: {
     tasks: [
