@@ -255,6 +255,379 @@ window.CFZExercises = {
     ],
   },
 
+  // ===================== თავი 4 — JavaScript =====================
+  "js-intro": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს JavaScript გვერდზე? დაასახელე 3 მაგალითი." },
+      { level: "easy", q: "როგორ ჩაერთვება JS ფაილი HTML გვერდში?" },
+    ],
+    answers: ["რეაგირებს დაჭერაზე, ცვლის შიგთავსს, აგზავნის მოთხოვნებს სერვერზე.", '<script src="app.js" defer></script>'],
+  },
+  "js-console": {
+    tasks: [
+      { level: "easy", q: "დაწერე კომენტარის ორი ფორმა." },
+      { level: "easy", q: "როგორ დავბეჭდოთ ერთი console.log-ით ორი მნიშვნელობა?" },
+    ],
+    answers: ["// ერთხაზიანი და /* მრავალხაზიანი */", 'console.log("ჯამი:", 5)'],
+  },
+  "js-variables": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა let-სა და const-ს შორის?" },
+      { level: "medium", q: "რატომ ჯობია const ნაგულისხმევ არჩევანად?" },
+    ],
+    answers: ["let-ის მნიშვნელობა შეიძლება შეიცვალოს, const-ის — არა.", "კოდი უფრო პროგნოზირებადია; შემთხვევითი გადაწერა გამორიცხულია."],
+  },
+  "js-types": {
+    tasks: [
+      { level: "easy", q: "დაასახელე JS-ის 5 ძირითადი ტიპი." },
+      { level: "medium", q: "რას აბრუნებს typeof null და რატომ?" },
+      { level: "medium", q: "როგორ შევამოწმოთ, არის თუ არა მნიშვნელობა მასივი?" },
+    ],
+    answers: ["string, number, boolean, undefined, null (ასევე object).", '"object" — ენის ძველი შეცდომაა, თავსებადობის გამო ვერ გაასწორეს.', "Array.isArray(x)"],
+  },
+  "js-operators": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს % ოპერატორი? მოიყვანე გამოყენების მაგალითი." },
+      { level: "medium", q: "რას იძლევა 2 + \"2\" და რატომ?" },
+    ],
+    answers: ["ნაშთს აბრუნებს; n % 2 === 0 ლუწობას ამოწმებს.", '"22" — + ტექსტთან წებებას ნიშნავს, არა შეკრებას.'],
+  },
+  "js-strings": {
+    tasks: [
+      { level: "easy", q: "როგორ გადავიყვანოთ ტექსტი დიდ ასოებში?" },
+      { level: "medium", q: "რატომ არ ცვლის .toUpperCase() ორიგინალ ცვლადს?" },
+    ],
+    answers: [".toUpperCase()", "სტრიქონები უცვლელია (immutable) — მეთოდი ახალ სტრიქონს აბრუნებს."],
+  },
+  "js-template": {
+    tasks: [
+      { level: "easy", q: "დაწერე შაბლონი, რომელიც ცვლადს ჩასვამს ტექსტში." },
+      { level: "medium", q: "რა უპირატესობა აქვს შაბლონს + -ით წებებასთან შედარებით?" },
+    ],
+    answers: ["`გამარჯობა, ${name}!`", "ნაკლები შეცდომა (ჰარები, პლიუსები), მრავალხაზოვნება, გამოსახულებების ჩასმა."],
+  },
+  "js-numbers": {
+    tasks: [
+      { level: "easy", q: "როგორ დავამრგვალოთ რიცხვი უახლოეს მთელამდე?" },
+      { level: "medium", q: "დაწერე ფორმულა შემთხვევითი მთელი რიცხვისთვის 1-დან 6-მდე." },
+      { level: "medium", q: "რატომ არ არის 0.1 + 0.2 ზუსტად 0.3?" },
+    ],
+    answers: ["Math.round(x)", "Math.floor(Math.random() * 6) + 1", "ორობითი წილადების ჩაწერის სიზუსტის გამო — ეს ყველა ენას ახასიათებს."],
+  },
+  "js-comparison": {
+    tasks: [
+      { level: "easy", q: "რატომ ჯობია === ვიდრე ==?" },
+      { level: "medium", q: "რას იძლევა \"2\" == 2 და \"2\" === 2?" },
+    ],
+    answers: ["=== ტიპსაც ადარებს და ავტომატურ გარდაქმნას არ აკეთებს.", "პირველი true, მეორე false."],
+  },
+  "js-truthy": {
+    tasks: [
+      { level: "easy", q: "ჩამოთვალე falsy მნიშვნელობები." },
+      { level: "medium", q: "ცარიელი მასივი truthy-ა თუ falsy? როგორ შევამოწმოთ სიცარიელე?" },
+    ],
+    answers: ["false, 0, \"\", null, undefined, NaN.", "truthy-ა; სიცარიელე: arr.length === 0."],
+  },
+  "js-if": {
+    tasks: [
+      { level: "easy", q: "დაწერე if/else, რომელიც ქულის მიხედვით შეფასებას აბრუნებს." },
+      { level: "medium", q: "რატომ უნდა იყოს ყველაზე კონკრეტული პირობა ზემოთ?" },
+    ],
+    answers: ["if (q > 80) { … } else { … }", "პირობები რიგზე მოწმდება და პირველივე დამთხვევაზე ჩერდება."],
+  },
+  "js-switch": {
+    tasks: [
+      { level: "easy", q: "რა მოხდება, თუ case-ში break დაგავიწყდება?" },
+      { level: "medium", q: "როდის ჯობია switch if/else-ს?" },
+    ],
+    answers: ["შესრულება შემდეგ case-ზე გადავარდება (fall-through).", "როცა ერთ მნიშვნელობას ბევრ კონკრეტულ ვარიანტს ადარებ."],
+  },
+  "js-ternary": {
+    tasks: [
+      { level: "easy", q: "გადაწერე ტერნარულად: if (age >= 18) x = \"დიახ\"; else x = \"არა\";" },
+      { level: "medium", q: "როდის არ უნდა გამოვიყენოთ ტერნარული?" },
+    ],
+    answers: ['const x = age >= 18 ? "დიახ" : "არა";', "როცა შტოებში რამდენიმე ქმედებაა ან ჩალაგება საჭიროა — მაშინ if ჯობია."],
+  },
+  "js-for": {
+    tasks: [
+      { level: "easy", q: "დაწერე ციკლი, რომელიც 1-დან 10-მდე ჯამს ითვლის." },
+      { level: "medium", q: "რა განსხვავებაა for...of-სა და for...in-ს შორის?" },
+    ],
+    answers: ["for (let i = 1; i <= 10; i++) jami += i;  // 55", "of — მნიშვნელობებზე (მასივი); in — გასაღებებზე (ობიექტი)."],
+  },
+  "js-while": {
+    tasks: [
+      { level: "easy", q: "როდის ავირჩიოთ while და როდის for?" },
+      { level: "medium", q: "რა არის უსასრულო ციკლი და როგორ ავიცილოთ თავიდან?" },
+    ],
+    answers: ["while — როცა გამეორებათა რაოდენობა წინასწარ არ იცი; for — როცა იცი.", "პირობა არასდროს ხდება false; ციკლში აუცილებლად შეცვალე ის, რასაც პირობა ამოწმებს."],
+  },
+  "js-break": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა break-სა და continue-ს შორის?" },
+      { level: "medium", q: "რომელი მასივის მეთოდი ცვლის ხშირად break-იან ციკლს?" },
+    ],
+    answers: ["break ციკლს წყვეტს; continue მხოლოდ მიმდინარე გამეორებას ტოვებს.", ".find() — პირველ დამთხვევას აბრუნებს."],
+  },
+  "js-arrays": {
+    tasks: [
+      { level: "easy", q: "როგორ ავიღოთ მასივის ბოლო ელემენტი?" },
+      { level: "medium", q: "რატომ მუშაობს push() const მასივზე?" },
+    ],
+    answers: ["arr[arr.length - 1] ან arr.at(-1)", "const კრძალავს ცვლადის ხელახლა მინიჭებას, არა შიგთავსის ცვლილებას."],
+  },
+  "js-array-methods": {
+    tasks: [
+      { level: "easy", q: "დაასახელე მეთოდები დასაწყისში/ბოლოში დამატებისა და წაშლისთვის." },
+      { level: "medium", q: "რა განსხვავებაა slice()-სა და splice()-ს შორის?" },
+      { level: "medium", q: "როგორ გავაკეთოთ მასივის ასლი?" },
+    ],
+    answers: ["push/pop (ბოლო), unshift/shift (დასაწყისი).", "slice ორიგინალს არ ცვლის და ახალს აბრუნებს; splice ორიგინალს ცვლის.", "[...arr] ან arr.slice()"],
+  },
+  "js-map-filter": {
+    tasks: [
+      { level: "easy", q: "დაწერე: მასივიდან მხოლოდ ლუწები." },
+      { level: "easy", q: "დაწერე: ყველა ელემენტი გამრავლებული 3-ზე." },
+      { level: "medium", q: "რით განსხვავდება forEach map-ისგან?" },
+    ],
+    answers: ["arr.filter(n => n % 2 === 0)", "arr.map(n => n * 3)", "forEach არაფერს აბრუნებს; map ახალ მასივს ქმნის."],
+  },
+  "js-reduce": {
+    tasks: [
+      { level: "easy", q: "დაწერე მასივის ჯამი reduce-ით." },
+      { level: "medium", q: "რატომ უნდა მივუთითოთ საწყისი მნიშვნელობა?" },
+    ],
+    answers: ["arr.reduce((a, b) => a + b, 0)", "ცარიელ მასივზე შეცდომას აგდებს და ტიპებიც შეიძლება აირიოს."],
+  },
+  "js-find": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა find()-სა და filter()-ს შორის?" },
+      { level: "medium", q: "როგორ ვიპოვოთ ობიექტი მასივში id-ით?" },
+    ],
+    answers: ["find ერთ ელემენტს აბრუნებს (ან undefined), filter — მასივს.", "users.find(u => u.id === 5)"],
+  },
+  "js-sort": {
+    tasks: [
+      { level: "easy", q: "დაალაგე რიცხვები ზრდადობით." },
+      { level: "medium", q: "რატომ იძლევა [25,3,100].sort() არასწორ შედეგს?" },
+      { level: "medium", q: "როგორ დავალაგოთ ორიგინალის შეცვლის გარეშე?" },
+    ],
+    answers: ["arr.sort((a, b) => a - b)", "ნაგულისხმევად ელემენტებს ტექსტად ადარებს.", "[...arr].sort(...)"],
+  },
+  "js-objects": {
+    tasks: [
+      { level: "easy", q: "როდის გამოვიყენოთ წერტილი და როდის კვადრატული ფრჩხილი?" },
+      { level: "medium", q: "რას აბრუნებს არარსებული თვისება და როგორ დავიცვათ თავი?" },
+    ],
+    answers: ["წერტილი — როცა სახელი წინასწარ იცი; ფრჩხილი — როცა სახელი ცვლადშია.", "undefined; გამოიყენე ?. — user?.address?.city"],
+  },
+  "js-object-methods": {
+    tasks: [
+      { level: "easy", q: "დაწერე ობიექტის მეთოდი, რომელიც this-ს იყენებს." },
+      { level: "medium", q: "რატომ არ გამოდგება ისრიანი ფუნქცია მეთოდად?" },
+    ],
+    answers: ["greet() { return `გამარჯობა, ${this.name}`; }", "მას საკუთარი this არ აქვს — გარე სკოუპიდან იღებს."],
+  },
+  "js-functions": {
+    tasks: [
+      { level: "easy", q: "დაწერე ფუნქცია, რომელიც ორ რიცხვს ამრავლებს." },
+      { level: "medium", q: "რას აბრუნებს ფუნქცია return-ის გარეშე?" },
+    ],
+    answers: ["function mult(a, b) { return a * b; }", "undefined"],
+  },
+  "js-arrow": {
+    tasks: [
+      { level: "easy", q: "გადაწერე ისრიანად: function jami(a,b){return a+b;}" },
+      { level: "medium", q: "დაასახელე ისრიანი ფუნქციის მთავარი ტექნიკური განსხვავება." },
+    ],
+    answers: ["const jami = (a, b) => a + b;", "საკუთარი this არ აქვს — გარე კონტექსტიდან იღებს."],
+  },
+  "js-params": {
+    tasks: [
+      { level: "easy", q: "დაწერე ფუნქცია ნაგულისხმევი პარამეტრით." },
+      { level: "medium", q: "სად უნდა იდგეს rest პარამეტრი და რატომ?" },
+    ],
+    answers: ['function greet(name = "სტუმარო") { … }', "ბოლოს — ის ყველა დარჩენილ არგუმენტს აგროვებს."],
+  },
+  "js-spread": {
+    tasks: [
+      { level: "easy", q: "გააერთიანე ორი მასივი spread-ით." },
+      { level: "medium", q: "რა განსხვავებაა rest-სა და spread-ს შორის?" },
+      { level: "hard", q: "რა შეზღუდვა აქვს { ...obj } ასლს?" },
+    ],
+    answers: ["[...a, ...b]", "ერთი და იგივე სინტაქსია: პარამეტრებში აგროვებს (rest), სხვაგან — შლის (spread).", "ზედაპირულია — ჩალაგებული ობიექტები საერთო რჩება; ღრმა ასლი: structuredClone()."],
+  },
+  "js-scope": {
+    tasks: [
+      { level: "easy", q: "დაასახელე სკოუპის სამი სახე." },
+      { level: "medium", q: "რა განსხვავებაა let-ისა და var-ის hoisting-ში?" },
+    ],
+    answers: ["გლობალური, ფუნქციის, ბლოკის.", "var გამოცხადებამდე undefined-ია; let/const შეცდომას აგდებს (temporal dead zone)."],
+  },
+  "js-closures": {
+    tasks: [
+      { level: "medium", q: "ახსენი, რა არის closure." },
+      { level: "hard", q: "დაწერე მრიცხველი closure-ით." },
+    ],
+    answers: [
+      "ფუნქცია, რომელსაც ახსოვს ის სკოუპი, სადაც შეიქმნა — გარე ფუნქციის დასრულების შემდეგაც.",
+      "function counter(){ let c = 0; return () => ++c; }",
+    ],
+  },
+  "js-this": {
+    tasks: [
+      { level: "medium", q: "რას მიუთითებს this ობიექტის მეთოდში?" },
+      { level: "hard", q: "რა მოხდება, თუ მეთოდს ობიექტისგან მოვწყვეტთ?" },
+    ],
+    answers: ["თავად ობიექტს.", "this დაიკარგება; გამოსავალი — .bind(obj) ან ისრიანი ფუნქცია."],
+  },
+  "js-recursion": {
+    tasks: [
+      { level: "medium", q: "რა არის საბაზისო შემთხვევა და რატომაა აუცილებელი?" },
+      { level: "hard", q: "დაწერე რეკურსიული ფუნქცია ფაქტორიალისთვის." },
+    ],
+    answers: ["პირობა, რომელზეც რეკურსია ჩერდება; მის გარეშე — უსასრულო გამოძახება და stack overflow.", "function f(n){ return n <= 1 ? 1 : n * f(n - 1); }"],
+  },
+  "js-destructuring": {
+    tasks: [
+      { level: "easy", q: "ამოიღე ობიექტიდან name და age ერთი ხაზით." },
+      { level: "medium", q: "როგორ მივცეთ ნაგულისხმევი მნიშვნელობა დესტრუქტურიზაციისას?" },
+    ],
+    answers: ["const { name, age } = user;", 'const { city = "თბილისი" } = user;'],
+  },
+  "js-object-static": {
+    tasks: [
+      { level: "easy", q: "როგორ მივიღოთ ობიექტის გასაღებების მასივი?" },
+      { level: "medium", q: "დაწერე ციკლი, რომელიც ობიექტის ყველა წყვილზე გაივლის." },
+    ],
+    answers: ["Object.keys(obj)", "for (const [k, v] of Object.entries(obj)) { … }"],
+  },
+  "js-json": {
+    tasks: [
+      { level: "easy", q: "როგორ გადავიყვანოთ ობიექტი JSON ტექსტად და უკან?" },
+      { level: "medium", q: "რა იკარგება JSON.stringify-ისას?" },
+    ],
+    answers: ["JSON.stringify(obj) და JSON.parse(text)", "ფუნქციები და undefined მნიშვნელობები."],
+  },
+  "js-map-set": {
+    tasks: [
+      { level: "easy", q: "როგორ მოვაშოროთ მასივს გამეორებები?" },
+      { level: "medium", q: "რით სჯობს Map ჩვეულებრივ ობიექტს?" },
+    ],
+    answers: ["[...new Set(arr)]", "გასაღები ნებისმიერი ტიპის შეიძლება იყოს და რიგი გარანტირებულია."],
+  },
+  "js-classes": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს constructor?" },
+      { level: "medium", q: "შექმენი კლასი ორი თვისებითა და ერთი მეთოდით." },
+    ],
+    answers: ["ახალი ობიექტის შექმნისას სრულდება და თვისებებს აყენებს.", "class A { constructor(x, y){ this.x = x; this.y = y; } info(){ return this.x; } }"],
+  },
+  "js-inheritance": {
+    tasks: [
+      { level: "medium", q: "რას აკეთებს extends და super()?" },
+      { level: "hard", q: "რატომ უნდა გამოიძახო super() this-ის გამოყენებამდე?" },
+    ],
+    answers: ["extends მშობლის თვისებებს გადმოსცემს; super() მშობლის კონსტრუქტორს იძახებს.", "სანამ super() არ გამოიძახება, this ჯერ არ არსებობს."],
+  },
+  "js-dom-intro": {
+    tasks: [
+      { level: "easy", q: "რა არის DOM?" },
+      { level: "medium", q: "DOM-ის შეცვლა ცვლის თუ არა HTML ფაილს?" },
+    ],
+    answers: ["ბრაუზერის მიერ HTML-დან აგებული ხის სტრუქტურა, რომელსაც JS ცვლის.", "არა — ცვლილება მხოლოდ მეხსიერებაშია და განახლებისას ქრება."],
+  },
+  "js-selectors": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა querySelector-სა და querySelectorAll-ს შორის?" },
+      { level: "medium", q: "რას აბრუნებს querySelector, თუ ვერაფერი იპოვა?" },
+    ],
+    answers: ["პირველი ერთ ელემენტს აბრუნებს, მეორე — ყველას (NodeList).", "null — ამიტომ მასზე მიმართვამდე შეამოწმე."],
+  },
+  "js-dom-content": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა textContent-სა და innerHTML-ს შორის?" },
+      { level: "hard", q: "რატომ არის საშიში მომხმარებლის ტექსტის innerHTML-ით ჩასმა?" },
+    ],
+    answers: ["textContent მხოლოდ ტექსტს ცვლის; innerHTML — HTML-ს ტეგებით.", "XSS — გვერდზე უცხო კოდის გაშვება ხდება შესაძლებელი."],
+  },
+  "js-classlist": {
+    tasks: [
+      { level: "easy", q: "დაასახელე classList-ის 4 მეთოდი." },
+      { level: "medium", q: "რატომ ჯობია კლასის გადართვა style-ის პირდაპირ ცვლილებას?" },
+    ],
+    answers: ["add, remove, toggle, contains.", "გარეგნობა CSS-ში რჩება და ლოგიკისგან გამიჯნულია."],
+  },
+  "js-dom-create": {
+    tasks: [
+      { level: "easy", q: "დაწერე ახალი <li>-ის შექმნა და სიაში დამატება." },
+      { level: "medium", q: "რატომ არ ჩანს createElement-ით შექმნილი ელემენტი მაშინვე?" },
+    ],
+    answers: ['const li = document.createElement("li"); li.textContent = "…"; list.append(li);', "სანამ მშობელს არ დაამატებ, ის DOM-ში არ არის."],
+  },
+  "js-events": {
+    tasks: [
+      { level: "easy", q: "დაწერე ღილაკზე დაჭერის დამმუშავებელი." },
+      { level: "medium", q: "რას აკეთებს event.preventDefault()?" },
+      { level: "hard", q: "რა არის მოვლენის დელეგირება და რატომ გამოვიყენოთ?" },
+    ],
+    answers: [
+      'btn.addEventListener("click", () => { … })',
+      "ბრაუზერის ნაგულისხმევ ქცევას აჩერებს (მაგ. ფორმის გაგზავნას).",
+      "ერთი დამმუშავებელი მშობელზე bubbling-ის წყალობით — ბევრი შვილის ნაცვლად.",
+    ],
+  },
+  "js-timers": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა setTimeout-სა და setInterval-ს შორის?" },
+      { level: "medium", q: "რატომ სრულდება setTimeout(fn, 0) სხვა კოდის შემდეგ?" },
+    ],
+    answers: ["setTimeout ერთხელ, setInterval — გამეორებით (სანამ clearInterval არ გამოიძახე).", "ის რიგში დგება და მხოლოდ მიმდინარე კოდის დასრულების შემდეგ სრულდება."],
+  },
+  "js-promise": {
+    tasks: [
+      { level: "easy", q: "დაასახელე Promise-ის სამი მდგომარეობა." },
+      { level: "medium", q: "როგორ დავიჭიროთ Promise-ის შეცდომა?" },
+    ],
+    answers: ["pending, fulfilled, rejected.", ".catch() ან try/catch await-თან ერთად."],
+  },
+  "js-async-await": {
+    tasks: [
+      { level: "easy", q: "სად შეიძლება await-ის გამოყენება?" },
+      { level: "medium", q: "რას აბრუნებს async ფუნქცია?" },
+      { level: "hard", q: "როგორ გავუშვათ რამდენიმე მოთხოვნა პარალელურად?" },
+    ],
+    answers: ["მხოლოდ async ფუნქციის შიგნით.", "ყოველთვის Promise-ს.", "Promise.all([...]) — ცალკე await-ები თანმიმდევრულად ელოდება."],
+  },
+  "js-fetch": {
+    tasks: [
+      { level: "medium", q: "რატომ არ აგდებს fetch შეცდომას 404-ზე და როგორ შევამოწმოთ?" },
+      { level: "medium", q: "რატომ სჭირდება .json()-ს await?" },
+    ],
+    answers: ["მოთხოვნა წარმატებულია, თუ პასუხი მოვიდა; შეამოწმე response.ok.", "სხეულის წაკითხვაც ასინქრონულია."],
+  },
+  "js-errors": {
+    tasks: [
+      { level: "easy", q: "რისთვის არის finally?" },
+      { level: "medium", q: "როგორ ავაგდოთ საკუთარი შეცდომა?" },
+      { level: "medium", q: "რატომ არ უნდა დავტოვოთ ცარიელი catch?" },
+    ],
+    answers: ["ორივე შემთხვევაში სრულდება — შეცდომისასაც და წარმატებისასაც.", 'throw new Error("ტექსტი")', "შეცდომა ჩაიყლაპება და გამართვა შეუძლებელი ხდება."],
+  },
+  "js-recap": {
+    tasks: [
+      { level: "medium", q: "დაწერე პროგრამა: სტუდენტების მასივიდან გამოიტანე 80+ ქულიანები და საშუალო ქულა." },
+      { level: "hard", q: "ააწყვე პატარა TODO აპლიკაცია: დამატება, წაშლა, სიის ჩვენება (DOM + მოვლენები)." },
+    ],
+  },
+  "js-resources": {
+    tasks: [
+      { level: "easy", q: "გაიარე Exercism-ის ან Codewars-ის 3 ამოცანა." },
+      { level: "medium", q: "აირჩიე JavaScript30-იდან ერთი პროექტი და გაიმეორე." },
+    ],
+  },
+
   // ===================== თავი 3 — CSS =====================
   "css-intro": {
     tasks: [
