@@ -255,6 +255,207 @@ window.CFZExercises = {
     ],
   },
 
+  // ===================== თავი 6 — Node.js =====================
+  "node-intro": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა ბრაუზერის JS-სა და Node-ის JS-ს შორის?" },
+      { level: "easy", q: "როგორ იშვება Node-ის ფაილი ტერმინალიდან?" },
+    ],
+    answers: ["ბრაუზერში არის document/window, Node-ში კი fs/http/process; ენა იგივეა.", "node index.js"],
+  },
+  "node-modules": {
+    tasks: [
+      { level: "easy", q: "როგორ ვაკეთებთ ექსპორტს და იმპორტს CommonJS-ში?" },
+      { level: "medium", q: "რა განსხვავებაა require(\"fs\")-სა და require(\"./fs\")-ს შორის?" },
+    ],
+    answers: ["module.exports = {...} და const x = require(\"./file\")", "პირველი ჩაშენებული მოდულია, მეორე — ლოკალური ფაილი."],
+  },
+  "node-esm": {
+    tasks: [
+      { level: "easy", q: "როგორ ჩავრთოთ ES მოდულები Node-ში?" },
+      { level: "medium", q: "რა აღარ მუშაობს ES მოდულებში?" },
+    ],
+    answers: ['package.json-ში "type": "module" ან .mjs გაფართოება.', "require და __dirname."],
+  },
+  "node-npm": {
+    tasks: [
+      { level: "easy", q: "რას ინახავს package.json?" },
+      { level: "easy", q: "რა განსხვავებაა npm i express-სა და npm i -D nodemon-ს შორის?" },
+      { level: "medium", q: "რატომ არ ვტვირთავთ node_modules-ს git-ში?" },
+    ],
+    answers: [
+      "პროექტის სახელს, ვერსიას, დამოკიდებულებებსა და სკრიპტებს.",
+      "პირველი dependencies-შია (საჭიროა გაშვებისას), მეორე devDependencies-ში (მხოლოდ დეველოპმენტში).",
+      "ის package.json-იდან ყოველთვის აღდგება npm install-ით და ძალიან დიდია.",
+    ],
+  },
+  "node-path": {
+    tasks: [
+      { level: "easy", q: "რატომ ვიყენებთ path.join-ს ხელით წებების ნაცვლად?" },
+      { level: "medium", q: "რა განსხვავებაა __dirname-სა და process.cwd()-ს შორის?" },
+    ],
+    answers: ["ოპერაციული სისტემები სხვადასხვა გამყოფს იყენებენ; join ამას თავად აგვარებს.", "__dirname ფაილის საქაღალდეა; cwd() — საიდანაც ბრძანება გაუშვი."],
+  },
+  "node-fs-read": {
+    tasks: [
+      { level: "easy", q: "რას აბრუნებს readFileSync კოდირების მითითების გარეშე?" },
+      { level: "medium", q: "რატომ არის readFileSync საშიში სერვერზე?" },
+    ],
+    answers: ["Buffer-ს (ბაიტებს), არა ტექსტს.", "სანამ ფაილი იკითხება, სერვერი სხვა მოთხოვნას ვერ ემსახურება."],
+  },
+  "node-fs-write": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა writeFileSync-სა და appendFileSync-ს შორის?" },
+      { level: "medium", q: "როგორ შევამოწმოთ, არსებობს თუ არა ფაილი?" },
+    ],
+    answers: ["write გადააწერს, append ბოლოში დაამატებს.", "fs.existsSync(path)"],
+  },
+  "node-fs-async": {
+    tasks: [
+      { level: "medium", q: "რას ნიშნავს error-first callback?" },
+      { level: "medium", q: "რატომ იბეჭდება readFile-ის შემდეგი ხაზი უფრო ადრე?" },
+    ],
+    answers: ["callback-ის პირველი არგუმენტი ყოველთვის შეცდომაა: (err, data).", "წაკითხვა ფონურია — Node ლოდინში არ დგება."],
+  },
+  "node-fs-promises": {
+    tasks: [
+      { level: "easy", q: "როგორ წავიკითხოთ ფაილი async/await-ით?" },
+      { level: "medium", q: "როგორ ვიჭერთ შეცდომას await-თან?" },
+    ],
+    answers: ['const fsp = require("fs/promises"); const d = await fsp.readFile(p);', "try/catch-ით."],
+  },
+  "node-fs-dirs": {
+    tasks: [
+      { level: "easy", q: "როგორ ჩამოვთვალოთ საქაღალდის შიგთავსი?" },
+      { level: "medium", q: "როგორ შევქმნათ ჩალაგებული საქაღალდე?" },
+    ],
+    answers: ["fs.readdirSync(path)", "fs.mkdirSync(p, { recursive: true })"],
+  },
+  "node-process-argv": {
+    tasks: [
+      { level: "easy", q: "რატომ ვიწყებთ argv-ს slice(2)-ით?" },
+      { level: "medium", q: "დაწერე სკრიპტი, რომელიც პირველ არგუმენტს დაბეჭდავს." },
+    ],
+    answers: ["პირველი ორი node-ის და სკრიპტის მისამართია.", "console.log(process.argv[2])"],
+  },
+  "node-process-env": {
+    tasks: [
+      { level: "easy", q: "როგორ წავიკითხოთ PORT ნაგულისხმევი მნიშვნელობით?" },
+      { level: "hard", q: "რატომ არ ვწერთ API გასაღებს კოდში?" },
+    ],
+    answers: ["process.env.PORT || 3000", "კოდი git-ში ხვდება და გასაღები გაჟონავს; მისი ადგილი .env-ია (.gitignore-ში)."],
+  },
+  "node-events": {
+    tasks: [
+      { level: "easy", q: "როგორ დავუსმინოთ და გავუშვათ მოვლენა?" },
+      { level: "medium", q: "რა განსხვავებაა on-სა და once-ს შორის?" },
+    ],
+    answers: ["emitter.on(\"x\", fn) და emitter.emit(\"x\", data)", "once მხოლოდ პირველ მოვლენას იჭერს და შემდეგ თავად წყვეტს მოსმენას."],
+  },
+  "node-json": {
+    tasks: [
+      { level: "easy", q: "როგორ წავიკითხოთ და ჩავწეროთ JSON ფაილი?" },
+      { level: "medium", q: "რას აკეთებს JSON.stringify(data, null, 2)?" },
+    ],
+    answers: ["JSON.parse(fs.readFileSync(p,\"utf8\")) და fs.writeFileSync(p, JSON.stringify(d))", "ლამაზად, ორი ჰარით ფორმატირებულ ტექსტს აბრუნებს."],
+  },
+  "node-errors": {
+    tasks: [
+      { level: "easy", q: "რას ნიშნავს ENOENT?" },
+      { level: "medium", q: "დაასახელე შეცდომის მიღების სამი გზა Node-ში." },
+    ],
+    answers: ["ფაილი ან საქაღალდე ვერ მოიძებნა.", "try/catch (sync), err არგუმენტი (callback), .catch/try-await (Promise)."],
+  },
+  "node-http-server": {
+    tasks: [
+      { level: "easy", q: "დაწერე უმარტივესი HTTP სერვერი." },
+      { level: "medium", q: "რა მოხდება, თუ res.end() არ დაიძახე?" },
+    ],
+    answers: ['http.createServer((req,res)=>res.end("hi")).listen(3000)', "ბრაუზერი უსასრულოდ დაელოდება პასუხს."],
+  },
+  "node-routing": {
+    tasks: [
+      { level: "easy", q: "როგორ გავიგოთ, რომელი მისამართი და მეთოდი მოითხოვეს?" },
+      { level: "medium", q: "დაასახელე 4 სტატუსის კოდი და მათი მნიშვნელობა." },
+    ],
+    answers: ["req.url და req.method", "200 წარმატება, 201 შეიქმნა, 404 ვერ მოიძებნა, 500 სერვერის შეცდომა."],
+  },
+  "node-json-api": {
+    tasks: [
+      { level: "easy", q: "რომელი სათაური უნდა დავაყენოთ JSON პასუხისთვის?" },
+      { level: "medium", q: "როგორ იწერება REST-ის კონვენციით მისამართები?" },
+    ],
+    answers: ["Content-Type: application/json", "არსებითი სახელი მრავლობითში: /api/users; მოქმედებას მეთოდი განსაზღვრავს."],
+  },
+  "node-post-body": {
+    tasks: [
+      { level: "medium", q: "როგორ ვკითხულობთ POST-ის სხეულს სუფთა http-ში?" },
+      { level: "medium", q: "რატომ უნდა ჩავსვათ JSON.parse try/catch-ში?" },
+    ],
+    answers: ['req.on("data", c => body += c) და req.on("end", ...)', "კლიენტმა შეიძლება არასწორი JSON გამოგზავნოს და პროგრამა ჩავარდება."],
+  },
+  "node-express-intro": {
+    tasks: [
+      { level: "easy", q: "დაწერე Express-ის უმარტივესი აპლიკაცია." },
+      { level: "medium", q: "რა განსხვავებაა res.send-სა და res.json-ს შორის?" },
+    ],
+    answers: ['const app = express(); app.get("/", (req,res)=>res.send("hi")); app.listen(3000);', "res.json ყოველთვის JSON-ს აბრუნებს სწორი სათაურით; send ტიპს თავად ხვდება."],
+  },
+  "node-express-params": {
+    tasks: [
+      { level: "easy", q: "როგორ მივიღოთ /users/:id-დან id?" },
+      { level: "medium", q: "რა ტიპისაა req.params-ის მნიშვნელობა და რა უნდა გავითვალისწინოთ?" },
+    ],
+    answers: ["req.params.id", "ყოველთვის ტექსტია — რიცხვთან შესადარებლად Number() სჭირდება."],
+  },
+  "node-express-middleware": {
+    tasks: [
+      { level: "medium", q: "რა სამი არგუმენტი აქვს middleware-ს?" },
+      { level: "hard", q: "რა მოხდება, თუ next() არ დაიძახე?" },
+    ],
+    answers: ["(req, res, next)", "მოთხოვნა ჩაიკიდება — ბრაუზერი პასუხს ვერასდროს მიიღებს."],
+  },
+  "node-express-json": {
+    tasks: [
+      { level: "easy", q: "რომელი middleware სჭირდება req.body-ს წასაკითხად?" },
+      { level: "medium", q: "სად უნდა გამოცხადდეს ის და რატომ?" },
+    ],
+    answers: ["express.json()", "მარშრუტებამდე — თორემ req.body undefined იქნება."],
+  },
+  "node-express-errors": {
+    tasks: [
+      { level: "medium", q: "რამდენი არგუმენტი აქვს შეცდომების middleware-ს?" },
+      { level: "hard", q: "რატომ არ უნდა გამოვუჩინოთ მომხმარებელს შეცდომის დეტალები?" },
+    ],
+    answers: ["ოთხი: (err, req, res, next) — სამით Express მას ჩვეულებრივად ჩათვლის.", "დეტალები სისტემის შესახებ ინფორმაციას აძლევს პოტენციურ თავდამსხმელს."],
+  },
+  "node-structure": {
+    tasks: [
+      { level: "medium", q: "დაასახელე ტიპური საქაღალდეები Node პროექტში." },
+      { level: "hard", q: "რატომ არ უნდა იცოდეს მარშრუტმა, როგორ ინახება მონაცემი?" },
+    ],
+    answers: ["routes, controllers, services, models (+ .env).", "მაშინ ბაზის შეცვლა მარშრუტებს არ შეეხება."],
+  },
+  "node-async-patterns": {
+    tasks: [
+      { level: "medium", q: "რატომ სჭირდება async მარშრუტს try/catch?" },
+      { level: "hard", q: "რატომ ანელებს ერთი სინქრონული მძიმე ოპერაცია მთელ სერვერს?" },
+    ],
+    answers: ["სხვაგვარად შეცდომა გაძვრება და მოთხოვნა ჩაიკიდება.", "Node ერთ ნაკადში მუშაობს — ის ბლოკავს ყველა სხვა მოთხოვნას."],
+  },
+  "node-recap": {
+    tasks: [
+      { level: "medium", q: "ააწყვე REST API სიისთვის: GET, POST და DELETE." },
+      { level: "hard", q: "დაამატე მონაცემების შენახვა JSON ფაილში და შეცდომების დამუშავება." },
+    ],
+  },
+  "node-resources": {
+    tasks: [
+      { level: "easy", q: "დააყენე nodemon და გაუშვი პროექტი მისით." },
+      { level: "medium", q: "გატესტე შენი API Postman-ით ან curl-ით." },
+    ],
+  },
+
   // ===================== თავი 5 — TypeScript =====================
   "ts-intro": {
     tasks: [

@@ -12,6 +12,7 @@
     css: window.CssLessons || [],
     js: window.JsLessons || [],
     ts: window.TsLessons || [],
+    node: window.NodeLessons || [],
   };
   function lessonsFor(chapterId) {
     return COURSES[chapterId] || [];
@@ -31,6 +32,7 @@
     { id: "css", title: "CSS", available: true },
     { id: "js", title: "JavaScript", available: true },
     { id: "ts", title: "TypeScript", available: true },
+    { id: "node", title: "Node.js", available: true },
   ];
 
   const NAV = [
@@ -61,6 +63,7 @@
     createStylePlayground,
     createJsPlayground,
     createTsPlayground,
+    createNodePlayground,
     stripTypes,
     rgbOf,
     isColorNear,
@@ -578,16 +581,23 @@
         "return JSON.stringify(v);}catch(e){return String(v);}}" +
         "function __push(){S.logs.push([].slice.call(arguments).map(__fmt).join(' '));}" +
         "var console={log:__push,info:__push,warn:__push,error:__push,debug:__push};" +
+        (opts.preamble || "") +
         (opts.exposeSource ? "var __src=" + JSON.stringify(editor.value) + ";" : "") +
         "try{\n" + (opts.transform ? opts.transform(editor.value) : editor.value) + "\n;" +
         "try{var __r=(function(){\n" + (testSource || "return true;") + "\n})();" +
-        "if(__r&&typeof __r==='object'){S.ok=!!__r.ok;S.msg=__r.message||'';}else{S.ok=!!__r;}" +
+        "if(__r&&typeof __r.then==='function'){S.pending=__r;}" +
+        "else if(__r&&typeof __r==='object'){S.ok=!!__r.ok;S.msg=__r.message||'';}else{S.ok=!!__r;}" +
         "}catch(e){S.ok=false;S.msg='შემოწმება ვერ შესრულდა: '+e.message;}" +
         "}catch(e){S.err=e.message;}" +
         "S.ran=true;})();</scr" + "ipt>" +
         "<scr" + "ipt>(function(){var S=" + S + ";" +
         "if(!S.ran&&!S.err){S.err='სინტაქსური შეცდომა — შეამოწმე ფრჩხილები და წერტილმძიმეები';}" +
-        "parent.postMessage({cfz:'" + frameId + "',logs:S.logs,ok:S.ok,msg:S.msg,err:S.err},'*');" +
+        "function __report(){parent.postMessage({cfz:'" + frameId + "',logs:S.logs,ok:S.ok,msg:S.msg,err:S.err},'*');}" +
+        "if(S.pending){S.pending.then(function(v){" +
+        "if(v&&typeof v==='object'){S.ok=!!v.ok;S.msg=v.message||'';}else{S.ok=!!v;}" +
+        "},function(e){S.ok=false;S.msg='შემოწმება ჩავარდა: '+(e&&e.message?e.message:e);})" +
+        ".then(function(){setTimeout(__report,5);});}" +
+        "else{setTimeout(__report,5);}" +
         "})();</scr" + "ipt></body></html>";
 
       frame.srcdoc = harness;
@@ -845,6 +855,349 @@
       i++;
     }
     return out;
+  }
+
+  // Node.js-ის სიმულატორი — ბრაუზერში fs/http/require არ არსებობს, ამიტომ ვქმნით სასწავლო გარემოს.
+  const NODE_PREAMBLE = `
+var __node = (function(){
+var __files = {
+  "/app/data.txt": "გამარჯობა, Node!",
+  "/app/users.json": '[{"saxeli":"ელენე","asaki":20},{"saxeli":"ნატალი","asaki":22}]',
+  "/app/notes/todo.txt": "1. ისწავლე Node"
+};
+var __dirs = { "/app": true, "/app/notes": true };
+
+function __norm(p) {
+  p = String(p);
+  if (p.indexOf("/") !== 0) p = "/app/" + p.replace(/^\\.\\//, "");
+  return p.replace(/\\/+/g, "/");
+}
+function __enoent(p, op) {
+  var e = new Error("ENOENT: no such file or directory, " + op + " '" + p + "'");
+  e.code = "ENOENT";
+  return e;
+}
+
+var path = {
+  sep: "/",
+  join: function () {
+    var parts = [].slice.call(arguments).filter(Boolean);
+    var joined = parts.join("/").replace(/\\/+/g, "/");
+    var out = [];
+    joined.split("/").forEach(function (seg) {
+      if (seg === "..") out.pop();
+      else if (seg !== "." ) out.push(seg);
+    });
+    return out.join("/");
+  },
+  basename: function (p, ext) {
+    var b = String(p).split("/").pop();
+    if (ext && b.slice(-ext.length) === ext) b = b.slice(0, -ext.length);
+    return b;
+  },
+  extname: function (p) {
+    var b = String(p).split("/").pop();
+    var i = b.lastIndexOf(".");
+    return i > 0 ? b.slice(i) : "";
+  },
+  dirname: function (p) {
+    var parts = String(p).split("/");
+    parts.pop();
+    return parts.join("/") || "/";
+  },
+  resolve: function () {
+    var p = [].slice.call(arguments).join("/");
+    return __norm(p);
+  }
+};
+
+var fs = {
+  readFileSync: function (p, enc) {
+    var f = __norm(p);
+    if (!(f in __files)) throw __enoent(f, "open");
+    return __files[f];
+  },
+  writeFileSync: function (p, data) { __files[__norm(p)] = String(data); },
+  appendFileSync: function (p, data) {
+    var f = __norm(p);
+    __files[f] = (__files[f] || "") + String(data);
+  },
+  existsSync: function (p) { var f = __norm(p); return (f in __files) || (f in __dirs); },
+  unlinkSync: function (p) { delete __files[__norm(p)]; },
+  mkdirSync: function (p) { __dirs[__norm(p)] = true; },
+  readdirSync: function (p) {
+    var d = __norm(p).replace(/\\/$/, "");
+    var out = [];
+    Object.keys(__files).forEach(function (f) {
+      if (path.dirname(f) === d) out.push(path.basename(f));
+    });
+    Object.keys(__dirs).forEach(function (f) {
+      if (f !== d && path.dirname(f) === d) out.push(path.basename(f));
+    });
+    return out.sort();
+  },
+  readFile: function (p, enc, cb) {
+    if (typeof enc === "function") { cb = enc; }
+    setTimeout(function () {
+      var f = __norm(p);
+      if (!(f in __files)) return cb(__enoent(f, "open"), null);
+      cb(null, __files[f]);
+    }, 0);
+  },
+  writeFile: function (p, data, cb) {
+    if (typeof cb !== "function") cb = function () {};
+    setTimeout(function () { __files[__norm(p)] = String(data); cb(null); }, 0);
+  },
+  promises: {
+    readFile: function (p) {
+      return new Promise(function (res, rej) {
+        var f = __norm(p);
+        if (!(f in __files)) rej(__enoent(f, "open")); else res(__files[f]);
+      });
+    },
+    writeFile: function (p, data) {
+      return new Promise(function (res) { __files[__norm(p)] = String(data); res(); });
+    },
+    readdir: function (p) { return Promise.resolve(fs.readdirSync(p)); }
+  }
+};
+
+var os = {
+  platform: function () { return "linux"; },
+  homedir: function () { return "/home/user"; },
+  cpus: function () { return [{}, {}, {}, {}]; },
+  totalmem: function () { return 8589934592; },
+  EOL: "\\n"
+};
+
+function EventEmitter() { this._e = {}; }
+EventEmitter.prototype.on = function (n, f) { (this._e[n] = this._e[n] || []).push(f); return this; };
+EventEmitter.prototype.once = function (n, f) {
+  var self = this;
+  function g() { self.off(n, g); f.apply(null, arguments); }
+  return this.on(n, g);
+};
+EventEmitter.prototype.off = function (n, f) {
+  this._e[n] = (this._e[n] || []).filter(function (x) { return x !== f; });
+  return this;
+};
+EventEmitter.prototype.emit = function (n) {
+  var args = [].slice.call(arguments, 1);
+  (this._e[n] || []).slice().forEach(function (f) { f.apply(null, args); });
+  return (this._e[n] || []).length > 0;
+};
+EventEmitter.prototype.listenerCount = function (n) { return (this._e[n] || []).length; };
+var events = { EventEmitter: EventEmitter };
+
+var __server = null;
+var http = {
+  createServer: function (handler) {
+    __server = handler;
+    return {
+      listen: function (port, cb) { if (typeof cb === "function") cb(); return this; },
+      close: function () { __server = null; }
+    };
+  },
+  STATUS_CODES: { 200: "OK", 404: "Not Found", 500: "Internal Server Error" }
+};
+
+// მოთხოვნის სიმულაცია სერვერზე (ტესტებისთვისაც და სასწავლოდაც)
+function __request(method, url, body) {
+  return new Promise(function (resolve) {
+    var chunks = [];
+    var res = {
+      statusCode: 200,
+      _headers: {},
+      setHeader: function (k, v) { this._headers[k.toLowerCase()] = v; },
+      getHeader: function (k) { return this._headers[k.toLowerCase()]; },
+      writeHead: function (code, headers) {
+        this.statusCode = code;
+        if (headers) for (var k in headers) this._headers[k.toLowerCase()] = headers[k];
+        return this;
+      },
+      write: function (c) { chunks.push(String(c)); return true; },
+      end: function (c) {
+        if (c !== undefined) chunks.push(String(c));
+        resolve({ status: this.statusCode, headers: this._headers, body: chunks.join("") });
+      },
+      json: function (o) {
+        this._headers["content-type"] = "application/json";
+        this.end(JSON.stringify(o));
+      },
+      send: function (c) { this.end(typeof c === "object" ? JSON.stringify(c) : c); },
+      status: function (c) { this.statusCode = c; return this; }
+    };
+    var req = {
+      method: (method || "GET").toUpperCase(),
+      url: url || "/",
+      headers: { host: "localhost:3000" },
+      body: body,
+      _data: body === undefined ? "" : (typeof body === "string" ? body : JSON.stringify(body)),
+      on: function (ev, cb) {
+        var self = this;
+        if (ev === "data") { if (self._data) setTimeout(function () { cb(self._data); }, 0); }
+        if (ev === "end") setTimeout(function () { cb(); }, 1);
+        return this;
+      }
+    };
+    if (__expressApp) { __expressApp.__handle(req, res); }
+    else if (__server) { __server(req, res); }
+    else { resolve({ status: 0, headers: {}, body: "სერვერი არ არის შექმნილი" }); }
+  });
+}
+
+// მინი-Express
+var __expressApp = null;
+function express() {
+  var routes = [];
+  var mws = [];
+  var errMws = [];
+  function app() {}
+  ["get", "post", "put", "delete", "patch"].forEach(function (m) {
+    app[m] = function (p, h) { routes.push({ m: m.toUpperCase(), p: p, h: h }); return app; };
+  });
+  app.use = function (a, b) {
+    var h = typeof a === "function" ? a : b;
+    var p = typeof a === "function" ? null : a;
+    if (h && h.length === 4) errMws.push({ p: p, h: h });
+    else mws.push({ p: p, h: h });
+    return app;
+  };
+  app.listen = function (port, cb) { __expressApp = app; if (typeof cb === "function") cb(); return { close: function () {} }; };
+  app.__handle = function (req, res) {
+    var url = req.url.split("?")[0];
+    var query = {};
+    var qs = req.url.split("?")[1];
+    if (qs) qs.split("&").forEach(function (kv) {
+      var pair = kv.split("=");
+      query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
+    });
+    req.query = query;
+    if (typeof req.body === "string" && req.headers["content-type"] === "application/json") {
+      try { req.body = JSON.parse(req.body); } catch (e) {}
+    }
+
+    var i = 0;
+    function fail(err) {
+      var j = 0;
+      function nextErr(e) {
+        var current = e || err;
+        while (j < errMws.length) {
+          var mw = errMws[j++];
+          if (mw.p && url.indexOf(mw.p) !== 0) continue;
+          try { return mw.h(current, req, res, nextErr); }
+          catch (thrown) { current = thrown; }
+        }
+        res.statusCode = 500;
+        res.end("Internal Server Error");
+      }
+      nextErr(err);
+    }
+    function nextMw(err) {
+      if (err) return fail(err);
+      if (i < mws.length) {
+        var mw = mws[i++];
+        if (mw.p && url.indexOf(mw.p) !== 0) return nextMw();
+        try { return mw.h(req, res, nextMw); } catch (e) { return fail(e); }
+      }
+      dispatch();
+    }
+    function dispatch() {
+      for (var k = 0; k < routes.length; k++) {
+        var r = routes[k];
+        if (r.m !== req.method) continue;
+        var params = __match(r.p, url);
+        if (params) {
+          req.params = params;
+          try { return r.h(req, res, nextMw); } catch (e) { return fail(e); }
+        }
+      }
+      res.statusCode = 404;
+      res.end("Cannot " + req.method + " " + url);
+    }
+    nextMw();
+  };
+  return app;
+}
+express.json = function () {
+  return function (req, res, next) {
+    if (typeof req.body === "string" && req.body) {
+      try { req.body = JSON.parse(req.body); } catch (e) {}
+    }
+    next();
+  };
+};
+express.Router = function () { return express(); };
+
+function __match(pattern, url) {
+  var pp = pattern.split("/").filter(Boolean);
+  var up = url.split("/").filter(Boolean);
+  if (pp.length !== up.length) return null;
+  var params = {};
+  for (var i = 0; i < pp.length; i++) {
+    if (pp[i][0] === ":") params[pp[i].slice(1)] = decodeURIComponent(up[i]);
+    else if (pp[i] !== up[i]) return null;
+  }
+  return params;
+}
+
+var process = {
+  argv: ["node", "/app/index.js"],
+  env: { NODE_ENV: "development", PORT: "3000" },
+  platform: "linux",
+  version: "v20.11.0",
+  cwd: function () { return "/app"; },
+  exit: function () {},
+  on: function () {},
+  memoryUsage: function () { return { heapUsed: 4194304 }; }
+};
+
+var module = { exports: {} };
+
+// წინასწარ მომზადებული ლოკალური მოდულები
+var __localModules = {
+  "./math": (function () { var m = { exports: {} };
+    m.exports.add = function (a, b) { return a + b; };
+    m.exports.multiply = function (a, b) { return a * b; };
+    return m.exports; })(),
+  "./config": { port: 3000, host: "localhost" }
+};
+
+function __require(name) {
+  switch (name) {
+    case "fs": return fs;
+    case "fs/promises": return fs.promises;
+    case "path": return path;
+    case "os": return os;
+    case "events": return events;
+    case "http": return http;
+    case "express": return express;
+    default:
+      if (name in __localModules) return __localModules[name];
+      var e = new Error("Cannot find module '" + name + "'");
+      e.code = "MODULE_NOT_FOUND";
+      throw e;
+  }
+}
+
+return { require: __require, process: process, module: module, request: __request, files: __files };
+})();
+
+var require = __node.require;
+var process = __node.process;
+var module = __node.module;
+var exports = module.exports;
+var __request = __node.request;
+var __files = __node.files;
+var __dirname = "/app";
+var __filename = "/app/index.js";
+`;
+
+  function createNodePlayground(starter, testSource, onResult) {
+    return createJsPlayground(starter, testSource, onResult, {
+      preamble: NODE_PREAMBLE,
+      label: "Node.js — დაწერე და გაუშვი",
+    });
   }
 
   // TypeScript პლეიგრაუნდი: ტიპებს ჭრის და შედეგს JS-ის გამშვებში უშვებს.
