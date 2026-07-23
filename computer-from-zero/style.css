@@ -2609,3 +2609,74 @@ body:not([data-authed]) .app-main {
   flex-wrap: wrap;
   align-items: center;
 }
+
+/* ==================== გამდიდრება: ვიზუალი, მაგალითები, რესურსები ==================== */
+.visual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.lesson-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-strong);
+}
+.lesson-illustration svg {
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+}
+.lesson-photo {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-strong);
+}
+.lesson-photo-img {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+.lesson-photo-cap {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+.photo-credit {
+  font-size: 0.74rem;
+}
+.photo-credit a {
+  color: var(--muted);
+}
+.extras-block {
+  margin-top: 12px;
+}
+.extras-block h4 {
+  margin: 0 0 8px;
+}
+.examples-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  line-height: 1.5;
+}
+.resource-links {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+.resource-links a {
+  color: var(--accent);
+  font-weight: 600;
+}

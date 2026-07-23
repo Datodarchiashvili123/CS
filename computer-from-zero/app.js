@@ -591,6 +591,74 @@
     ]);
   }
 
+  function buildVisualBand(lesson) {
+    if (!lesson.illustration && !lesson.photo) return null;
+    const grid = el("div", { className: "visual-grid" });
+    if (lesson.illustration) {
+      const holder = el("div", { className: "lesson-illustration" });
+      holder.innerHTML = lesson.illustration;
+      grid.append(holder);
+    }
+    if (lesson.photo) {
+      const p = lesson.photo;
+      const img = el("img", {
+        className: "lesson-photo-img",
+        attrs: { src: p.src, alt: p.alt || "", loading: "lazy" },
+      });
+      const cap = el("figcaption", { className: "lesson-photo-cap" }, [
+        el("span", { text: p.caption || "" }),
+        p.credit
+          ? el("span", { className: "photo-credit" }, [
+              p.creditUrl
+                ? el("a", {
+                    attrs: { href: p.creditUrl, target: "_blank", rel: "noopener noreferrer" },
+                    text: "📷 " + p.credit,
+                  })
+                : el("span", { text: "📷 " + p.credit }),
+            ])
+          : null,
+      ]);
+      grid.append(el("figure", { className: "lesson-photo" }, [img, cap]));
+    }
+    return el("section", { className: "section-band visual-band" }, [
+      el("h3", { text: "ვიზუალი" }),
+      grid,
+    ]);
+  }
+
+  function buildExtras(lesson) {
+    const hasEx = lesson.examples && lesson.examples.length;
+    const hasRes = lesson.resources && lesson.resources.length;
+    if (!hasEx && !hasRes) return null;
+    const children = [el("h3", { text: "მაგალითები და რესურსები" })];
+    if (hasEx) {
+      children.push(
+        el("div", { className: "extras-block" }, [
+          el("h4", { text: "სად ხვდები რეალურ ცხოვრებაში" }),
+          el("ul", { className: "examples-list" }, lesson.examples.map(function (x) {
+            return el("li", { text: x });
+          })),
+        ])
+      );
+    }
+    if (hasRes) {
+      children.push(
+        el("div", { className: "extras-block" }, [
+          el("h4", { text: "ღრმად ჩასაწვდომად" }),
+          el("ul", { className: "resource-links" }, lesson.resources.map(function (r) {
+            return el("li", {}, [
+              el("a", {
+                attrs: { href: r.href, target: "_blank", rel: "noopener noreferrer" },
+                text: r.label,
+              }),
+            ]);
+          })),
+        ])
+      );
+    }
+    return el("section", { className: "section-band" }, children);
+  }
+
   function renderLessonPanel(lesson, index) {
     const simulationHost = el("div", { className: "sim-card" }, []);
     const challengeStatus = el("p", { className: "challenge-status", text: "დავალება ჯერ შესასრულებელია." }, []);
@@ -603,7 +671,7 @@
       }
     };
 
-    const panel = el("article", { className: "lesson-panel" }, [
+    const panelChildren = [
       el("header", { className: "lesson-heading" }, [
         el("p", { className: "lesson-kicker", text: "გაკვეთილი " + (index + 1) + " / " + lessons.length }, []),
         el("h2", { text: lesson.title }, []),
@@ -616,6 +684,12 @@
           createInfoBox("ფიზიკურად რა ხდება", lesson.physical),
         ]),
       ]),
+    ];
+
+    const visualBand = buildVisualBand(lesson);
+    if (visualBand) panelChildren.push(visualBand);
+
+    panelChildren.push(
       el("section", { className: "section-band" }, [
         el("h3", { text: "ინტერაქტიული სიმულაცია" }, []),
         el("div", { className: "simulation-layout" }, [
@@ -626,7 +700,13 @@
             challengeStatus,
           ]),
         ]),
-      ]),
+      ])
+    );
+
+    const extras = buildExtras(lesson);
+    if (extras) panelChildren.push(extras);
+
+    panelChildren.push(
       el("nav", { className: "lesson-actions", attrs: { "aria-label": "გაკვეთილების მართვა" } }, [
         createButton("წინა", "secondary", function () {
           if (index > 0) navigate("course", "cfz", lessons[index - 1].id);
@@ -634,8 +714,10 @@
         createButton(index === lessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
           if (index < lessons.length - 1) navigate("course", "cfz", lessons[index + 1].id);
         }),
-      ]),
-    ]);
+      ])
+    );
+
+    const panel = el("article", { className: "lesson-panel" }, panelChildren);
 
     const prevButton = panel.querySelector(".lesson-actions .secondary-button");
     prevButton.disabled = index === 0;
