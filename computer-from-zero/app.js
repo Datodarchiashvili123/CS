@@ -10,6 +10,7 @@
     cfz: window.ComputerFromZeroLessons || [],
     html: window.HtmlLessons || [],
     css: window.CssLessons || [],
+    js: window.JsLessons || [],
   };
   function lessonsFor(chapterId) {
     return COURSES[chapterId] || [];
@@ -27,7 +28,7 @@
     { id: "cfz", title: "კომპიუტერი ნულიდან", available: true },
     { id: "html", title: "HTML", available: true },
     { id: "css", title: "CSS", available: true },
-    { id: "js", title: "JavaScript", available: false },
+    { id: "js", title: "JavaScript", available: true },
   ];
 
   const NAV = [
@@ -56,6 +57,7 @@
     schematicGate,
     createCodePlayground,
     createStylePlayground,
+    createJsPlayground,
     rgbOf,
     isColorNear,
     goToLesson,
@@ -524,6 +526,116 @@
         render();
       },
       refresh: render,
+    };
+  }
+
+  // JS პლეიგრაუნდი: კოდი სრულდება იზოლირებულ iframe-ში (allow-scripts, same-origin გარეშე).
+  // შედეგი და console.log უკან postMessage-ით ბრუნდება. testSource იმავე სკოუპში სრულდება.
+  let jsPlaygroundSeq = 0;
+  function createJsPlayground(starter, testSource, onResult, options) {
+    const opts = options || {};
+    const frameId = "cfzjs" + ++jsPlaygroundSeq;
+
+    const editor = el("textarea", {
+      className: "code-editor",
+      attrs: { spellcheck: "false", rows: "12", "aria-label": "JavaScript კოდი" },
+    });
+    editor.value = starter || "";
+
+    const output = el("pre", { className: "js-output", text: "▶ დააჭირე „გაშვებას“" });
+    const frame = el("iframe", {
+      className: "js-runner",
+      attrs: { title: "გამშვები", sandbox: "allow-scripts", "aria-hidden": "true" },
+    });
+
+    let timer = null;
+
+    function run() {
+      output.textContent = "⏳ სრულდება…";
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () {
+        output.textContent = "⏱ კოდი ძალიან დიდხანს სრულდება — შესაძლოა უსასრულო ციკლია.";
+        if (onResult) onResult(false, "კოდი ვერ დასრულდა (შეამოწმე ციკლი).", []);
+      }, 3000);
+
+      // სამი ცალკე სკრიპტი: თუ მომხმარებლის კოდს სინტაქსური შეცდომა აქვს,
+      // მეორე ბლოკი საერთოდ არ გაიშვება — მესამე კი მაინც გაიშვება და შეცდომას დააბრუნებს.
+      const S = "window.__cfz";
+      const harness =
+        "<!doctype html><html><body>" + (opts.html || "") +
+        "<scr" + "ipt>" +
+        S + "={logs:[],ok:false,msg:'',err:null,ran:false};" +
+        "window.onerror=function(m){if(!" + S + ".err)" + S + ".err=m;return true;};" +
+        "</scr" + "ipt>" +
+        "<scr" + "ipt>(function(){var S=" + S + ";" +
+        "function __fmt(v){try{if(typeof v==='string')return v;" +
+        "if(v===undefined)return 'undefined';if(v===null)return 'null';" +
+        "if(typeof v==='function')return '[function]';" +
+        "return JSON.stringify(v);}catch(e){return String(v);}}" +
+        "function __push(){S.logs.push([].slice.call(arguments).map(__fmt).join(' '));}" +
+        "var console={log:__push,info:__push,warn:__push,error:__push,debug:__push};" +
+        "try{\n" + editor.value + "\n;" +
+        "try{var __r=(function(){\n" + (testSource || "return true;") + "\n})();" +
+        "if(__r&&typeof __r==='object'){S.ok=!!__r.ok;S.msg=__r.message||'';}else{S.ok=!!__r;}" +
+        "}catch(e){S.ok=false;S.msg='შემოწმება ვერ შესრულდა: '+e.message;}" +
+        "}catch(e){S.err=e.message;}" +
+        "S.ran=true;})();</scr" + "ipt>" +
+        "<scr" + "ipt>(function(){var S=" + S + ";" +
+        "if(!S.ran&&!S.err){S.err='სინტაქსური შეცდომა — შეამოწმე ფრჩხილები და წერტილმძიმეები';}" +
+        "parent.postMessage({cfz:'" + frameId + "',logs:S.logs,ok:S.ok,msg:S.msg,err:S.err},'*');" +
+        "})();</scr" + "ipt></body></html>";
+
+      frame.srcdoc = harness;
+    }
+
+    function onMessage(event) {
+      const data = event.data;
+      if (!data || data.cfz !== frameId) return;
+      window.clearTimeout(timer);
+
+      const lines = [];
+      if (data.logs && data.logs.length) lines.push(data.logs.join("\n"));
+      if (data.err) lines.push("❌ შეცდომა: " + data.err);
+      output.textContent = lines.length ? lines.join("\n") : "(კონსოლი ცარიელია)";
+
+      if (onResult) {
+        onResult(Boolean(data.ok) && !data.err, data.err ? "შეასწორე შეცდომა: " + data.err : data.msg || "", data.logs || []);
+      }
+    }
+
+    window.addEventListener("message", onMessage);
+
+    const runBtn = createButton("▶ გაშვება", "primary", run);
+    const resetBtn = createButton("თავიდან", "secondary", function () {
+      editor.value = starter || "";
+      run();
+    });
+
+    const element = el("div", { className: "js-playground" }, [
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "JavaScript — დაწერე და გაუშვი" }),
+        editor,
+      ]),
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "კონსოლი" }),
+        output,
+      ]),
+      el("div", { className: "control-row" }, [runBtn, resetBtn]),
+      frame,
+    ]);
+
+    window.setTimeout(run, 0);
+
+    return {
+      element: element,
+      run: run,
+      getCode: function () {
+        return editor.value;
+      },
+      destroy: function () {
+        window.clearTimeout(timer);
+        window.removeEventListener("message", onMessage);
+      },
     };
   }
 
