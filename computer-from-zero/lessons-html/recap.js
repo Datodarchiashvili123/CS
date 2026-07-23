@@ -15,13 +15,26 @@
       const CFZ = window.CFZ;
 
       const topics = [
-        { to: "html-intro", title: "რა არის HTML", desc: "ტეგი, ელემენტი, ატრიბუტი" },
+        { to: "html-intro", title: "რა არის HTML", desc: "მონიშვნის ენა, ელემენტი" },
         { to: "html-structure", title: "დოკუმენტის ჩონჩხი", desc: "DOCTYPE, html, head, body" },
-        { to: "html-text", title: "ტექსტი და სიები", desc: "h1–h6, p, strong, ul, ol, li" },
-        { to: "html-links-images", title: "ბმული და სურათი", desc: "a href, img src, alt" },
+        { to: "html-tags", title: "ტეგი და ატრიბუტი", desc: "ჩალაგება, ატრიბუტები, კომენტარი" },
+        { to: "html-headings", title: "სათაურები და აბზაცები", desc: "h1–h6 იერარქია, p" },
+        { to: "html-formatting", title: "ფორმატირება", desc: "strong, em, mark, code, blockquote" },
+        { to: "html-lists", title: "სიები", desc: "ul, ol, li, dl" },
+        { to: "html-links", title: "ბმულები", desc: "href, ღუზა, mailto, target" },
+        { to: "html-images", title: "სურათები", desc: "img, alt, figure, lazy" },
+        { to: "html-media", title: "მედია", desc: "video, audio, iframe" },
+        { to: "html-boxes", title: "div და span", desc: "ბლოკური vs სტრიქონული" },
         { to: "html-semantics", title: "სემანტიკა", desc: "header, nav, main, article, footer" },
         { to: "html-tables", title: "ცხრილი", desc: "table, tr, th, td" },
         { to: "html-forms", title: "ფორმა", desc: "form, label, input, button" },
+        { to: "html-input-types", title: "ველების ტიპები", desc: "radio, select, textarea" },
+        { to: "html-validation", title: "ვალიდაცია", desc: "required, minlength, pattern" },
+        { to: "html-id-class", title: "id და class", desc: "სახელური CSS/JS-თვის" },
+        { to: "html-entities", title: "სიმბოლოები", desc: "&lt; &gt; &amp; &copy;" },
+        { to: "html-accessibility", title: "ხელმისაწვდომობა", desc: "alt, label, lang, aria" },
+        { to: "html-meta-seo", title: "meta და SEO", desc: "title, description, og:" },
+        { to: "html-debugging", title: "გამართვა", desc: "ვალიდატორი, DevTools" },
       ];
 
       const stack = CFZ.el(
