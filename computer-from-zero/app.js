@@ -3,8 +3,16 @@
   const topNav = document.getElementById("topNav");
   const brandBtn = document.getElementById("brandBtn");
 
-  const lessons = window.ComputerFromZeroLessons || [];
   const exercises = window.CFZExercises || {};
+
+  // თითო თავს თავისი გაკვეთილების რეესტრი აქვს.
+  const COURSES = {
+    cfz: window.ComputerFromZeroLessons || [],
+    html: window.HtmlLessons || [],
+  };
+  function lessonsFor(chapterId) {
+    return COURSES[chapterId] || [];
+  }
 
   const authUser =
     window.CFZAuth && typeof window.CFZAuth.current === "function"
@@ -16,7 +24,7 @@
   // თავები — თავი 1 = კომპიუტერი ნულიდან (არსებული კურსი), დანარჩენი მალე.
   const CHAPTERS = [
     { id: "cfz", title: "კომპიუტერი ნულიდან", available: true },
-    { id: "html", title: "HTML", available: false },
+    { id: "html", title: "HTML", available: true },
     { id: "css", title: "CSS", available: false },
     { id: "js", title: "JavaScript", available: false },
   ];
@@ -45,12 +53,22 @@
     svgSymbol,
     createSchematicPart,
     schematicGate,
+    createCodePlayground,
     goToLesson,
     wait,
   };
 
+  function chapterOfLesson(id) {
+    const found = Object.keys(COURSES).find(function (key) {
+      return COURSES[key].some(function (l) {
+        return l.id === id;
+      });
+    });
+    return found || "cfz";
+  }
+
   function goToLesson(id) {
-    navigate("course", "cfz", id);
+    navigate("course", chapterOfLesson(id), id);
   }
 
   // ==================== ვიჯეტები (უცვლელი) ====================
@@ -353,6 +371,66 @@
     });
   }
 
+  // ცოცხალი HTML რედაქტორი + გადახედვა. onCheck(doc, code) ყოველ ცვლილებაზე.
+  function createCodePlayground(initialCode, onCheck, options) {
+    const opts = options || {};
+    const textarea = el("textarea", {
+      className: "code-editor",
+      attrs: { spellcheck: "false", rows: "12", "aria-label": "HTML კოდი" },
+    });
+    textarea.value = initialCode || "";
+
+    const frame = el("iframe", {
+      className: "code-preview",
+      attrs: { title: "შედეგი", sandbox: "" },
+    });
+
+    const element = el("div", { className: "playground" }, [
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "HTML კოდი — შეცვალე და ნახე შედეგი" }),
+        textarea,
+      ]),
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "შედეგი (ბრაუზერი)" }),
+        frame,
+      ]),
+    ]);
+
+    const BASE_STYLE =
+      "<style>body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;padding:14px;margin:0;" +
+      "color:#172033;background:#fff;line-height:1.55}img{max-width:100%}" +
+      "table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px 10px}" +
+      "label{display:block;margin:6px 0 2px}input,select,textarea{padding:6px;margin-bottom:8px}</style>";
+
+    function render() {
+      const code = textarea.value;
+      frame.srcdoc = opts.fullDocument
+        ? code
+        : "<!doctype html><html><head><meta charset='utf-8'>" + BASE_STYLE + "</head><body>" + code + "</body></html>";
+      if (onCheck) {
+        const parsed = opts.fullDocument
+          ? new DOMParser().parseFromString(code, "text/html")
+          : new DOMParser().parseFromString("<body>" + code + "</body>", "text/html");
+        onCheck(parsed, code);
+      }
+    }
+
+    textarea.addEventListener("input", render);
+    window.setTimeout(render, 0);
+
+    return {
+      element: element,
+      getCode: function () {
+        return textarea.value;
+      },
+      setCode: function (value) {
+        textarea.value = value;
+        render();
+      },
+      refresh: render,
+    };
+  }
+
   function createInfoBox(title, text) {
     return el("div", { className: "info-box" }, [
       el("strong", { text: title }, []),
@@ -386,8 +464,8 @@
     render();
   }
 
-  function lessonIndexById(id) {
-    return lessons.findIndex(function (l) {
+  function lessonIndexById(chapterId, id) {
+    return lessonsFor(chapterId).findIndex(function (l) {
       return l.id === id;
     });
   }
@@ -459,9 +537,10 @@
       ]);
       const item = el("li", { className: "chapter-item" }, [head]);
 
-      if (isActive && ch.available && ch.id === "cfz") {
+      const chLessons = lessonsFor(ch.id);
+      if (isActive && ch.available && chLessons.length) {
         const sub = el("ul", { className: "lesson-sublist" });
-        lessons.forEach(function (lesson, li) {
+        chLessons.forEach(function (lesson, li) {
           const done = completedLessons.has(lesson.id);
           const btn = el("button", {
             className:
@@ -487,16 +566,17 @@
     });
 
     const aside = el("aside", { className: "chapter-sidebar", attrs: { "aria-label": "თავები" } });
-    if (mode === "course" && activeChapter === "cfz") {
-      aside.append(renderProgressSummary());
+    if (mode === "course" && lessonsFor(activeChapter).length) {
+      aside.append(renderProgressSummary(activeChapter));
     }
     aside.append(list);
     return aside;
   }
 
-  function renderProgressSummary() {
-    const total = lessons.length;
-    const done = lessons.filter(function (l) {
+  function renderProgressSummary(chapterId) {
+    const chLessons = lessonsFor(chapterId);
+    const total = chLessons.length;
+    const done = chLessons.filter(function (l) {
       return completedLessons.has(l.id);
     }).length;
     const percent = total ? Math.round((done / total) * 100) : 0;
@@ -541,17 +621,23 @@
       sidebarEl = fresh;
     };
 
+    const chLessons = lessonsFor(chapterId);
+    const index = route.lesson
+      ? chLessons.findIndex(function (l) {
+          return l.id === route.lesson;
+        })
+      : -1;
+
     let content;
-    if (!chapter.available) {
+    if (!chapter.available || !chLessons.length) {
       content = renderChapterPlaceholder(chapter, mode);
-    } else if (route.lesson && lessonIndexById(route.lesson) >= 0) {
-      const index = lessonIndexById(route.lesson);
+    } else if (index >= 0) {
       content =
         mode === "course"
-          ? renderLessonPanel(lessons[index], index)
-          : renderExercisePanel(lessons[index], index);
+          ? renderLessonPanel(chLessons[index], index, chLessons, chapterId)
+          : renderExercisePanel(chLessons[index], index, chLessons, chapterId);
     } else {
-      content = renderChapterOverview(mode);
+      content = renderChapterOverview(mode, chapter, chLessons);
     }
 
     layout.append(sidebarEl, el("div", { className: "platform-content" }, [content]));
@@ -571,20 +657,23 @@
     ]);
   }
 
-  function renderChapterOverview(mode) {
+  function renderChapterOverview(mode, chapter, chLessons) {
+    const chapterNo = CHAPTERS.findIndex(function (c) {
+      return c.id === chapter.id;
+    }) + 1;
     const heading = mode === "course" ? "აირჩიე გაკვეთილი" : "აირჩიე გაკვეთილის დავალებები";
     const desc =
       mode === "course"
-        ? "15 ინტერაქტიული გაკვეთილი — ელექტრონიდან CPU-მდე. აირჩიე გაკვეთილი მარცხნივ ან დაიწყე თავიდან."
+        ? chLessons.length + " ინტერაქტიული გაკვეთილი. აირჩიე გაკვეთილი მარცხნივ ან დაიწყე თავიდან."
         : "თითო გაკვეთილს აქვს თავისი დავალებები. აირჩიე გაკვეთილი მარცხენა ჩამონათვალიდან.";
     return el("div", { className: "chapter-overview" }, [
       el("div", { className: "section-band" }, [
-        el("p", { className: "lesson-kicker", text: "თავი 1 · კომპიუტერი ნულიდან" }),
+        el("p", { className: "lesson-kicker", text: "თავი " + chapterNo + " · " + chapter.title }),
         el("h2", { text: heading }),
         el("p", { className: "state-note", text: desc }),
-        lessons[0]
+        chLessons[0]
           ? createButton("პირველი გაკვეთილი", "primary", function () {
-              navigate(mode, "cfz", lessons[0].id);
+              navigate(mode, chapter.id, chLessons[0].id);
             })
           : null,
       ]),
@@ -659,7 +748,7 @@
     return el("section", { className: "section-band" }, children);
   }
 
-  function renderLessonPanel(lesson, index) {
+  function renderLessonPanel(lesson, index, chLessons, chapterId) {
     const simulationHost = el("div", { className: "sim-card" }, []);
     const challengeStatus = el("p", { className: "challenge-status", text: "დავალება ჯერ შესასრულებელია." }, []);
 
@@ -673,7 +762,7 @@
 
     const panelChildren = [
       el("header", { className: "lesson-heading" }, [
-        el("p", { className: "lesson-kicker", text: "გაკვეთილი " + (index + 1) + " / " + lessons.length }, []),
+        el("p", { className: "lesson-kicker", text: "გაკვეთილი " + (index + 1) + " / " + chLessons.length }, []),
         el("h2", { text: lesson.title }, []),
       ]),
       el("section", { className: "section-band" }, [
@@ -681,7 +770,7 @@
         el("div", { className: "explanation-grid" }, [
           createInfoBox("მოკლე თეორია", lesson.theory),
           createInfoBox("ანალოგია", lesson.analogy),
-          createInfoBox("ფიზიკურად რა ხდება", lesson.physical),
+          createInfoBox(lesson.physicalLabel || "ფიზიკურად რა ხდება", lesson.physical),
         ]),
       ]),
     ];
@@ -709,10 +798,10 @@
     panelChildren.push(
       el("nav", { className: "lesson-actions", attrs: { "aria-label": "გაკვეთილების მართვა" } }, [
         createButton("წინა", "secondary", function () {
-          if (index > 0) navigate("course", "cfz", lessons[index - 1].id);
+          if (index > 0) navigate("course", chapterId, chLessons[index - 1].id);
         }),
-        createButton(index === lessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
-          if (index < lessons.length - 1) navigate("course", "cfz", lessons[index + 1].id);
+        createButton(index === chLessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
+          if (index < chLessons.length - 1) navigate("course", chapterId, chLessons[index + 1].id);
         }),
       ])
     );
@@ -721,7 +810,7 @@
 
     const prevButton = panel.querySelector(".lesson-actions .secondary-button");
     prevButton.disabled = index === 0;
-    if (index === lessons.length - 1) {
+    if (index === chLessons.length - 1) {
       panel.querySelector(".lesson-actions .primary-button").disabled = true;
     }
 
@@ -733,7 +822,7 @@
     return level === "hard" ? "🔴 რთული" : level === "medium" ? "🟡 საშუალო" : "🟢 მარტივი";
   }
 
-  function renderExercisePanel(lesson, index) {
+  function renderExercisePanel(lesson, index, chLessons, chapterId) {
     const data = exercises[lesson.id];
     const panel = el("article", { className: "exercise-panel" }, [
       el("header", { className: "lesson-heading" }, [
@@ -778,16 +867,16 @@
     panel.append(
       el("nav", { className: "lesson-actions" }, [
         createButton("წინა", "secondary", function () {
-          if (index > 0) navigate("assignments", "cfz", lessons[index - 1].id);
+          if (index > 0) navigate("assignments", chapterId, chLessons[index - 1].id);
         }),
-        createButton(index === lessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
-          if (index < lessons.length - 1) navigate("assignments", "cfz", lessons[index + 1].id);
+        createButton(index === chLessons.length - 1 ? "დასასრული" : "შემდეგი", "primary", function () {
+          if (index < chLessons.length - 1) navigate("assignments", chapterId, chLessons[index + 1].id);
         }),
       ])
     );
     const prev = panel.querySelector(".lesson-actions .secondary-button");
     prev.disabled = index === 0;
-    if (index === lessons.length - 1) {
+    if (index === chLessons.length - 1) {
       panel.querySelector(".lesson-actions .primary-button").disabled = true;
     }
     return panel;
@@ -800,10 +889,12 @@
       el("p", { className: "home-lead", text: "ინტერაქტიული კურსები — კომპიუტერის საფუძვლებიდან ვებ-დეველოპმენტამდე. თითო თავი ცოცხალი სიმულაციებით და დავალებებით." }),
       el("div", { className: "home-cta" }, [
         createButton("კურსის დაწყება", "primary", function () {
-          navigate("course", "cfz", lessons[0] ? lessons[0].id : null);
+          const first = lessonsFor("cfz")[0];
+          navigate("course", "cfz", first ? first.id : null);
         }),
         createButton("დავალებები", "secondary", function () {
-          navigate("assignments", "cfz", lessons[0] ? lessons[0].id : null);
+          const first = lessonsFor("cfz")[0];
+          navigate("assignments", "cfz", first ? first.id : null);
         }),
       ]),
     ]);
@@ -822,7 +913,7 @@
         }, [
           el("span", { className: "home-chapter-num", text: String(i + 1) }),
           el("span", { className: "home-chapter-title", text: ch.title }),
-          el("span", { className: "home-chapter-meta", text: ch.available ? lessons.length + " გაკვეთილი" : "მალე" }),
+          el("span", { className: "home-chapter-meta", text: ch.available ? lessonsFor(ch.id).length + " გაკვეთილი" : "მალე" }),
         ])
       );
     });
@@ -900,12 +991,13 @@
     if (tag === "INPUT" || tag === "TEXTAREA" || (target && target.isContentEditable)) return;
     const route = parseRoute();
     if (route.view !== "course" || !route.lesson) return;
-    const index = lessonIndexById(route.lesson);
+    const chLessons = lessonsFor(route.chapter);
+    const index = lessonIndexById(route.chapter, route.lesson);
     if (index < 0) return;
-    if (event.key === "ArrowRight" && index < lessons.length - 1) {
-      navigate("course", "cfz", lessons[index + 1].id);
+    if (event.key === "ArrowRight" && index < chLessons.length - 1) {
+      navigate("course", route.chapter, chLessons[index + 1].id);
     } else if (event.key === "ArrowLeft" && index > 0) {
-      navigate("course", "cfz", lessons[index - 1].id);
+      navigate("course", route.chapter, chLessons[index - 1].id);
     }
   });
 
