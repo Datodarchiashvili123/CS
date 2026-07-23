@@ -141,6 +141,13 @@ window.CFZExercises = {
     ],
     answers: ["hit = ქეშშია (სწრაფი); miss = არაა, RAM-მდე ჩადის (ნელი).", "L1 → L2 → L3 → RAM.", "50-ჯერ."],
   },
+  "extra-resources": {
+    tasks: [
+      { level: "easy", q: "გახსენი NandGame და გაიარე პირველი დონეები (NAND-იდან NOT, AND, OR)." },
+      { level: "medium", q: "აირჩიე ერთი ვიდეო (Ben Eater ან Crash Course) და ერთი აბზაცით ჩამოწერე, რა ახალი გაიგე." },
+      { level: "hard", q: "CircuitVerse-ში ან Logisim-ში ააწყვე half adder და შეამოწმე ჭეშმარიტების ცხრილით." },
+    ],
+  },
   recap: {
     tasks: [
       { level: "medium", q: "ერთი აბზაცით ახსენი მთელი ჯაჭვი: ელექტრონი → … → CPU." },

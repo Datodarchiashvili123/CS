@@ -52,7 +52,7 @@
     ],
 
     resources: [
-      { label: "Ben Eater — Transistors (ვიდეო)", href: "https://www.youtube.com/watch?v=DXvAlwMAxiA" },
+      { label: "Ben Eater — ელექტრონიკა ნულიდან (ვიდეოები)", href: "https://eater.net/" },
       { label: "Wikipedia — ტრანზისტორი", href: "https://en.wikipedia.org/wiki/Transistor" },
       { label: "Nand2Tetris — ლოგიკიდან კომპიუტერამდე", href: "https://www.nand2tetris.org/" },
     ],
