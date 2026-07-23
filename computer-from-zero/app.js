@@ -11,6 +11,7 @@
     html: window.HtmlLessons || [],
     css: window.CssLessons || [],
     js: window.JsLessons || [],
+    ts: window.TsLessons || [],
   };
   function lessonsFor(chapterId) {
     return COURSES[chapterId] || [];
@@ -29,6 +30,7 @@
     { id: "html", title: "HTML", available: true },
     { id: "css", title: "CSS", available: true },
     { id: "js", title: "JavaScript", available: true },
+    { id: "ts", title: "TypeScript", available: true },
   ];
 
   const NAV = [
@@ -58,6 +60,8 @@
     createCodePlayground,
     createStylePlayground,
     createJsPlayground,
+    createTsPlayground,
+    stripTypes,
     rgbOf,
     isColorNear,
     goToLesson,
@@ -574,7 +578,8 @@
         "return JSON.stringify(v);}catch(e){return String(v);}}" +
         "function __push(){S.logs.push([].slice.call(arguments).map(__fmt).join(' '));}" +
         "var console={log:__push,info:__push,warn:__push,error:__push,debug:__push};" +
-        "try{\n" + editor.value + "\n;" +
+        (opts.exposeSource ? "var __src=" + JSON.stringify(editor.value) + ";" : "") +
+        "try{\n" + (opts.transform ? opts.transform(editor.value) : editor.value) + "\n;" +
         "try{var __r=(function(){\n" + (testSource || "return true;") + "\n})();" +
         "if(__r&&typeof __r==='object'){S.ok=!!__r.ok;S.msg=__r.message||'';}else{S.ok=!!__r;}" +
         "}catch(e){S.ok=false;S.msg='შემოწმება ვერ შესრულდა: '+e.message;}" +
@@ -613,7 +618,7 @@
 
     const element = el("div", { className: "js-playground" }, [
       el("div", { className: "playground-pane" }, [
-        el("span", { className: "playground-label", text: "JavaScript — დაწერე და გაუშვი" }),
+        el("span", { className: "playground-label", text: opts.label || "JavaScript — დაწერე და გაუშვი" }),
         editor,
       ]),
       el("div", { className: "playground-pane" }, [
@@ -637,6 +642,219 @@
         window.removeEventListener("message", onMessage);
       },
     };
+  }
+
+  // TypeScript-ის ტიპების ამომჭრელი — სასწავლო ქვესიმრავლისთვის.
+  // სკანერი: სტრიქონებსა და კომენტარებს გვერდს უვლის, ობიექტის ლიტერალებს იცავს.
+  function stripTypes(src) {
+    let s = src;
+
+    // 1) interface ბლოკები — ფრჩხილების დათვლით
+    s = removeBlocks(s, /\binterface\s+[A-Za-z_$][\w$]*\s*(?:extends\s+[^{]+?)?\{/g);
+
+    // 2) type ალიასები (მრავალხაზოვანიც)
+    s = removeTypeAliases(s);
+
+    // 3) enum -> const ობიექტი
+    s = s.replace(/\benum\s+([A-Za-z_$][\w$]*)\s*\{([\s\S]*?)\}/g, function (m, name, body) {
+      let auto = 0;
+      const parts = body
+        .split(",")
+        .map(function (x) { return x.trim(); })
+        .filter(Boolean)
+        .map(function (x) {
+          const eq = x.indexOf("=");
+          if (eq === -1) return x + ": " + auto++;
+          const k = x.slice(0, eq).trim();
+          const v = x.slice(eq + 1).trim();
+          const n = Number(v);
+          if (!isNaN(n)) auto = n + 1;
+          return k + ": " + v;
+        });
+      return "const " + name + " = { " + parts.join(", ") + " };";
+    });
+
+    // 4) declare / export type|interface ნაშთები
+    s = s.replace(/^\s*declare\s+.*$/gm, "");
+
+    // 5) implements ... (კლასის სათაურში)
+    s = s.replace(/\s+implements\s+[A-Za-z_$][\w$\s,<>]*(?=\{)/g, " ");
+
+    // 5.5) კონსტრუქტორის პარამეტრ-თვისებები: constructor(private s: number) -> this.s = s
+    s = s.replace(/constructor\s*\(([^)]*)\)\s*\{/g, function (m, params) {
+      const names = [];
+      params.split(",").forEach(function (p) {
+        const mm = p.match(/^\s*(?:public|private|protected)\s+(?:readonly\s+)?([A-Za-z_$][\w$]*)/)
+          || p.match(/^\s*readonly\s+([A-Za-z_$][\w$]*)/);
+        if (mm) names.push(mm[1]);
+      });
+      const assigns = names.map(function (n) { return "this." + n + " = " + n + ";"; }).join(" ");
+      return "constructor(" + params + ") {" + (assigns ? " " + assigns : "");
+    });
+
+    // 6) წვდომის მოდიფიკატორები
+    s = s.replace(/\b(public|private|protected|readonly)\s+/g, "");
+
+    // 7) as Type / satisfies Type
+    s = s.replace(/\s+(?:as|satisfies)\s+(?:const\b|[A-Za-z_$][\w$]*(?:\s*<[^>]*>)?(?:\s*\[\s*\])*(?:\s*\|\s*[A-Za-z_$][\w$]*)*)/g, "");
+
+    // 8) non-null assertion
+    s = s.replace(/!(\s*[.)\],;])/g, "$1");
+
+    // 9) გენერიკები გამოცხადებებში
+    s = s.replace(/\b(function\s+[A-Za-z_$][\w$]*)\s*<[^<>()]*>/g, "$1");
+    s = s.replace(/\b(class\s+[A-Za-z_$][\w$]*)\s*<[^<>()]*>/g, "$1");
+    s = s.replace(/(=\s*)<([A-Za-z_$][\w$,\s]*)>(\s*\()/g, "$1$3");
+    // გამოძახების გენერიკები: foo<Type>(...)
+    s = s.replace(/\b([A-Za-z_$][\w$]*)\s*<\s*[A-Za-z_$][\w$,\s\[\]<>|]*\s*>\s*\(/g, "$1(");
+
+    // 10) ანოტაციების ამოჭრა სკანერით
+    s = scanStrip(s);
+
+    return s;
+  }
+
+  function removeBlocks(src, startRe) {
+    let out = src;
+    let m;
+    startRe.lastIndex = 0;
+    while ((m = startRe.exec(out))) {
+      const open = out.indexOf("{", m.index);
+      if (open === -1) break;
+      let depth = 0, i = open;
+      for (; i < out.length; i++) {
+        if (out[i] === "{") depth++;
+        else if (out[i] === "}") { depth--; if (depth === 0) break; }
+      }
+      out = out.slice(0, m.index) + out.slice(i + 1);
+      startRe.lastIndex = 0;
+    }
+    return out;
+  }
+
+  function removeTypeAliases(src) {
+    const re = /\btype\s+[A-Za-z_$][\w$]*\s*(?:<[^>]*>)?\s*=/g;
+    let out = src, m;
+    while ((m = re.exec(out))) {
+      let i = m.index + m[0].length;
+      let depth = 0;
+      for (; i < out.length; i++) {
+        const c = out[i];
+        if (c === "{" || c === "(" || c === "[" || c === "<") depth++;
+        else if (c === "}" || c === ")" || c === "]" || c === ">") depth--;
+        else if (c === ";" && depth <= 0) { i++; break; }
+        else if (c === "\n" && depth <= 0) {
+          const rest = out.slice(i + 1).match(/^\s*[|&]/);
+          if (!rest) break;
+        }
+      }
+      out = out.slice(0, m.index) + out.slice(i);
+      re.lastIndex = 0;
+    }
+    return out;
+  }
+
+  // კონტექსტის მიხედვით ჭრის ": ტიპს" — ობიექტის ლიტერალს არ ეხება.
+  function scanStrip(src) {
+    let out = "";
+    const stack = [{ type: "root", ternary: 0 }];
+    let i = 0;
+    let tail = ""; // ბოლო არა-ჰარი სიმბოლოები კონტექსტის ამოსაცნობად
+
+    function push(ch) {
+      tail = (tail + ch).slice(-12);
+    }
+
+    function objContext() {
+      return /[=(,:\[?&|]$/.test(tail) || /=>$/.test(tail) || /\breturn$/.test(tail);
+    }
+
+    while (i < src.length) {
+      const c = src[i];
+
+      if (c === '"' || c === "'" || c === "`") {
+        const q = c;
+        let j = i + 1;
+        while (j < src.length && (src[j] !== q || src[j - 1] === "\\")) j++;
+        out += src.slice(i, j + 1);
+        push(q);
+        i = j + 1;
+        continue;
+      }
+      if (c === "/" && src[i + 1] === "/") {
+        const j = src.indexOf("\n", i);
+        const end = j === -1 ? src.length : j;
+        out += src.slice(i, end);
+        i = end;
+        continue;
+      }
+      if (c === "/" && src[i + 1] === "*") {
+        const j = src.indexOf("*/", i);
+        const end = j === -1 ? src.length : j + 2;
+        out += src.slice(i, end);
+        i = end;
+        continue;
+      }
+
+      if (c === "{") { stack.push({ type: objContext() ? "obj" : "block", ternary: 0 }); out += c; push("{"); i++; continue; }
+      if (c === "}") { if (stack.length > 1) stack.pop(); out += c; push("}"); i++; continue; }
+      if (c === "(") { stack.push({ type: "paren", ternary: 0 }); out += c; push("("); i++; continue; }
+      if (c === ")") { if (stack.length > 1) stack.pop(); out += c; push(")"); i++; continue; }
+      if (c === "[") { stack.push({ type: "brack", ternary: 0 }); out += c; push("["); i++; continue; }
+      if (c === "]") { if (stack.length > 1) stack.pop(); out += c; push("]"); i++; continue; }
+
+      const frame = stack[stack.length - 1];
+
+      if (c === "?") {
+        // ?. და ?? — ჩვეულებრივი ოპერატორები
+        if (src[i + 1] === "." || src[i + 1] === "?") { out += c; push(c); i++; continue; }
+        // არჩევითი თვისების მარკერი: name?:
+        if (/^\s*:/.test(src.slice(i + 1, i + 4)) && frame.type !== "obj") { i++; continue; }
+        // დანარჩენი — ტერნარული
+        frame.ternary++;
+        out += c; push(c); i++; continue;
+      }
+
+      if (c === ":") {
+        if (frame.ternary > 0) { frame.ternary--; out += c; push(":"); i++; continue; }
+        // ")" -ის შემდეგ ":" ყოველთვის დაბრუნების ტიპია (მეთოდი ობიექტში/კლასში)
+        if (frame.type === "obj" && !/\)$/.test(tail)) { out += c; push(":"); i++; continue; }
+        let j = i + 1;
+        let d = 0;
+        let consumedAny = false;
+        while (j < src.length) {
+          const ch = src[j];
+          if (ch === "{") {
+            if (d === 0 && consumedAny) break; // ფუნქციის სხეული იწყება
+            d++;
+          } else if (ch === "<" || ch === "(" || ch === "[") d++;
+          else if (ch === ">" || ch === ")" || ch === "]" || ch === "}") {
+            if (d === 0) break;
+            d--;
+          } else if (d === 0 && (ch === "," || ch === ";" || ch === "=")) break;
+          else if (d === 0 && ch === "\n") break;
+          if (!/\s/.test(ch)) consumedAny = true;
+          j++;
+        }
+        i = j;
+        continue;
+      }
+
+      if (!/\s/.test(c)) push(c);
+      out += c;
+      i++;
+    }
+    return out;
+  }
+
+  // TypeScript პლეიგრაუნდი: ტიპებს ჭრის და შედეგს JS-ის გამშვებში უშვებს.
+  // ტესტს ორიგინალი TS წყარო __src ცვლადში მიეწოდება — ტიპების შემოწმებისთვის.
+  function createTsPlayground(starter, testSource, onResult) {
+    return createJsPlayground(starter, testSource, onResult, {
+      transform: stripTypes,
+      exposeSource: true,
+      label: "TypeScript — დაწერე და გაუშვი",
+    });
   }
 
   // დამხმარეები CSS-ის შესამოწმებლად

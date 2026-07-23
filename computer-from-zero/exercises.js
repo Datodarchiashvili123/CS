@@ -255,6 +255,214 @@ window.CFZExercises = {
     ],
   },
 
+  // ===================== თავი 5 — TypeScript =====================
+  "ts-intro": {
+    tasks: [
+      { level: "easy", q: "რა კავშირია TypeScript-სა და JavaScript-ს შორის?" },
+      { level: "medium", q: "რა ხდება ტიპებთან კომპილაციის შემდეგ?" },
+    ],
+    answers: ["TS არის JS-ის ზედნაშენი — ყველა სწორი JS ერთდროულად სწორი TS-იცაა.", "ისინი ქრება; ბრაუზერში მხოლოდ JavaScript რჩება."],
+  },
+  "ts-basic-types": {
+    tasks: [
+      { level: "easy", q: "დაწერე ცვლადი number ტიპით." },
+      { level: "medium", q: "რა განსხვავებაა string-სა და String-ს შორის?" },
+    ],
+    answers: ["let n: number = 5;", "string პრიმიტიული ტიპია (გამოიყენე ის); String ობიექტ-გარსია."],
+  },
+  "ts-inference": {
+    tasks: [
+      { level: "easy", q: "სად არის ანოტაცია სავალდებულო და სად ზედმეტი?" },
+      { level: "medium", q: "რა ტიპს მიანიჭებს TS პარამეტრს ანოტაციის გარეშე?" },
+    ],
+    answers: ["სავალდებულო — პარამეტრებში; ზედმეტი — როცა მნიშვნელობა მაშინვე ენიჭება.", "any (strict რეჟიმში კი შეცდომას იძლევა)."],
+  },
+  "ts-any-unknown": {
+    tasks: [
+      { level: "medium", q: "რა განსხვავებაა any-სა და unknown-ს შორის?" },
+      { level: "hard", q: "როდის ჩნდება never ტიპი?" },
+    ],
+    answers: ["any შემოწმებას თიშავს; unknown გამოყენებამდე ტიპის შემოწმებას მოითხოვს.", "როცა მნიშვნელობა ვერასდროს იარსებებს — მაგ. ფუნქცია, რომელიც ყოველთვის შეცდომას აგდებს."],
+  },
+  "ts-arrays": {
+    tasks: [
+      { level: "easy", q: "დაწერე რიცხვების მასივის ტიპი ორნაირად." },
+      { level: "medium", q: "რა განსხვავებაა number[]-სა და [string, number]-ს შორის?" },
+    ],
+    answers: ["number[] და Array<number>", "პირველი ნებისმიერი სიგრძის ერთგვაროვანი მასივია; მეორე ფიქსირებული კორტეჟი."],
+  },
+  "ts-objects": {
+    tasks: [
+      { level: "easy", q: "აღწერე ობიექტის ტიპი ორი თვისებით." },
+      { level: "medium", q: "რა მოხდება, თუ ობიექტში ზედმეტ თვისებას ჩაწერ?" },
+    ],
+    answers: ["{ name: string; age: number }", "TypeScript შეცდომას იძლევა — ასე ბეჭდვის შეცდომები იჭერს."],
+  },
+  "ts-interface": {
+    tasks: [
+      { level: "easy", q: "დაწერე interface ორი თვისებით." },
+      { level: "medium", q: "როგორ გავაფართოოთ interface?" },
+    ],
+    answers: ["interface User { name: string; age: number }", "interface Admin extends User { role: string }"],
+  },
+  "ts-type-alias": {
+    tasks: [
+      { level: "easy", q: "დაწერე type ალიასი გაერთიანებისთვის." },
+      { level: "medium", q: "რას ვერ აკეთებს interface, რასაც type აკეთებს?" },
+    ],
+    answers: ["type ID = string | number;", "პრიმიტივების, გაერთიანებებისა და კორტეჟების დასახელებას."],
+  },
+  "ts-interface-vs-type": {
+    tasks: [{ level: "medium", q: "რომელი აირჩიო ობიექტისთვის და რომელი გაერთიანებისთვის? ახსენი." }],
+    answers: ["ობიექტების/კლასების კონტრაქტს — interface; გაერთიანებებსა და რთულ ტიპებს — type."],
+  },
+  "ts-optional": {
+    tasks: [
+      { level: "easy", q: "როგორ გავხადოთ თვისება არჩევითი და როგორ readonly?" },
+      { level: "medium", q: "რა ტიპი აქვს რეალურად არჩევით თვისებას?" },
+    ],
+    answers: ["age?: number; და readonly id: number;", "„ტიპი | undefined“ — ამიტომ შემოწმება სჭირდება."],
+  },
+  "ts-union": {
+    tasks: [
+      { level: "easy", q: "დაწერე ტიპი, რომელიც ან ტექსტია, ან რიცხვი." },
+      { level: "medium", q: "რატომ ვერ გამოვიძახებთ .toUpperCase()-ს string | number-ზე?" },
+    ],
+    answers: ["string | number", "მეთოდი ორივე ტიპს არ აქვს — ჯერ ტიპი უნდა დაავიწროვო."],
+  },
+  "ts-literal": {
+    tasks: [
+      { level: "easy", q: "დაწერე ლიტერალური გაერთიანება სამი ვარიანტით." },
+      { level: "medium", q: "რით სჯობს ეს ჩვეულებრივ string-ს?" },
+    ],
+    answers: ['type Zoma = "S" | "M" | "L";', "მხოლოდ დაშვებული მნიშვნელობები გაივლის; რედაქტორიც ვარიანტებს გთავაზობს."],
+  },
+  "ts-intersection": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა & -სა და | -ს შორის?" },
+      { level: "medium", q: "დაწერე ორი ტიპის კვეთა." },
+    ],
+    answers: ["& — ორივეს თვისებები ერთად; | — ერთ-ერთი.", "type Admin = User & { role: string };"],
+  },
+  "ts-functions": {
+    tasks: [
+      { level: "easy", q: "დაწერე ფუნქციის ტიპი პარამეტრითა და დაბრუნებულით." },
+      { level: "easy", q: "რა ტიპია, როცა ფუნქცია არაფერს აბრუნებს?" },
+    ],
+    answers: ["function jami(a: number, b: number): number", "void"],
+  },
+  "ts-params": {
+    tasks: [
+      { level: "easy", q: "როგორ გავხადოთ პარამეტრი არჩევითი?" },
+      { level: "medium", q: "სად უნდა იდგეს არჩევითი პარამეტრი და რატომ?" },
+    ],
+    answers: ["name?: string", "სავალდებულოს შემდეგ — თორემ გამოძახებისას გამოტოვება შეუძლებელი იქნებოდა."],
+  },
+  "ts-narrowing": {
+    tasks: [
+      { level: "medium", q: "დაასახელე ტიპის დავიწროების 3 ხერხი." },
+      { level: "medium", q: "რატომ არის დავიწროება საჭირო გაერთიანებასთან?" },
+    ],
+    answers: ["typeof, instanceof, in (ასევე Array.isArray და შედარება).", "რომ კონკრეტული ტიპის მეთოდები გახდეს დაშვებული."],
+  },
+  "ts-guards": {
+    tasks: [
+      { level: "hard", q: "დაწერე type guard ფუნქცია, რომელიც ამოწმებს, არის თუ არა მნიშვნელობა რიცხვი." },
+      { level: "medium", q: "რას ნიშნავს „v is string“ და როდის მოქმედებს?" },
+    ],
+    answers: ["function isNum(v: unknown): v is number { return typeof v === \"number\"; }", "კომპილატორს ეუბნება ტიპს; გაშვებისას ის უბრალო boolean-ია."],
+  },
+  "ts-enum": {
+    tasks: [
+      { level: "easy", q: "რა მნიშვნელობა აქვს enum-ის პირველ წევრს ნაგულისხმევად?" },
+      { level: "medium", q: "რატომ ამჯობინებენ ბევრი გუნდი enum-ს ლიტერალურ გაერთიანებას?" },
+    ],
+    answers: ["0", "გაერთიანება მსუბუქია და JS-ში კვალს არ ტოვებს; enum კი რეალურ ობიექტად ითარგმნება."],
+  },
+  "ts-generics": {
+    tasks: [
+      { level: "medium", q: "დაწერე გენერიკული ფუნქცია, რომელიც იმავე ტიპს აბრუნებს." },
+      { level: "medium", q: "რატომ ჯობია გენერიკი any-ს?" },
+    ],
+    answers: ["function id<T>(v: T): T { return v; }", "გენერიკი ტიპს ინარჩუნებს; any-ს შემდეგ ინფორმაცია იკარგება."],
+  },
+  "ts-generic-constraints": {
+    tasks: [
+      { level: "medium", q: "დაწერე გენერიკი შეზღუდვით, რომელსაც length სჭირდება." },
+      { level: "hard", q: "რატომ ვერაფერს გავაკეთებთ შეუზღუდავ T-ზე?" },
+    ],
+    answers: ["<T extends { length: number }>", "TypeScript-მა არ იცის, რა თვისებები აქვს — ამიტომ არაფერს დაუშვებს."],
+  },
+  "ts-utility-types": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს Partial<T> და Omit<T, K>?" },
+      { level: "medium", q: "რომელი utility ტიპი გამოვიყენოთ ლექსიკონისთვის?" },
+    ],
+    answers: ["Partial ყველა თვისებას არჩევითს ხდის; Omit მითითებულს გამორიცხავს.", "Record<string, T>"],
+  },
+  "ts-keyof-typeof": {
+    tasks: [
+      { level: "medium", q: "რას აბრუნებს keyof?" },
+      { level: "hard", q: "რატომ იწერება ხშირად keyof typeof ერთად?" },
+    ],
+    answers: ["ობიექტის ტიპის გასაღებების გაერთიანებას.", "typeof ცვლადიდან ტიპს იღებს, keyof-ს კი ტიპი სჭირდება."],
+  },
+  "ts-classes": {
+    tasks: [
+      { level: "easy", q: "შექმენი კლასი ტიპიზებული თვისებებით." },
+      { level: "medium", q: "რა მოითხოვება strict რეჟიმში კლასის თვისებისგან?" },
+    ],
+    answers: ["class A { x: number; constructor(x: number) { this.x = x; } }", "ან კონსტრუქტორში დაინიშნოს, ან საწყისი მნიშვნელობა ჰქონდეს."],
+  },
+  "ts-modifiers": {
+    tasks: [
+      { level: "easy", q: "დაასახელე სამი წვდომის მოდიფიკატორი." },
+      { level: "medium", q: "რას აკეთებს constructor(private x: number)?" },
+      { level: "hard", q: "არის თუ არა private ნამდვილი დაცვა გაშვებისას?" },
+    ],
+    answers: ["public, private, protected.", "ავტომატურად ქმნის და ანიჭებს თვისებას this.x.", "არა — მხოლოდ კომპილაციისას; ნამდვილი დამალვისთვის #ველია."],
+  },
+  "ts-abstract": {
+    tasks: [
+      { level: "medium", q: "რა განსხვავებაა abstract კლასსა და interface-ს შორის?" },
+      { level: "medium", q: "რას აკეთებს implements?" },
+    ],
+    answers: ["abstract-ს შეიძლება ჰქონდეს მზა კოდი; interface მხოლოდ ფორმას აღწერს.", "ავალდებულებს კლასს, დააკმაყოფილოს interface-ის კონტრაქტი."],
+  },
+  "ts-null-safety": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს ?. და ??" },
+      { level: "medium", q: "რატომ არის strictNullChecks მნიშვნელოვანი?" },
+    ],
+    answers: ["?. უსაფრთხოდ წვდება; ?? ნაგულისხმევს აძლევს null/undefined-ის შემთხვევაში.", "null-ის შეცდომების მთელ კლასს იჭერს კომპილაციისას."],
+  },
+  "ts-assertion": {
+    tasks: [
+      { level: "medium", q: "რას აკეთებს as და რა რისკი აქვს?" },
+      { level: "hard", q: "რას ნიშნავს კოდში as-ის სიხშირე?" },
+    ],
+    answers: ["ტიპს ძალით ამტკიცებს; შემოწმებას თიშავს — შეცდომა გაშვებისას გამოვა.", "ჩვეულებრივ იმას, რომ ტიპები არასწორადაა აღწერილი."],
+  },
+  "ts-tsconfig": {
+    tasks: [
+      { level: "easy", q: "რომელი ბრძანებით ითარგმნება TS?" },
+      { level: "medium", q: "რომელი პარამეტრი უნდა იყოს ყოველთვის ჩართული და რატომ?" },
+    ],
+    answers: ["npx tsc (კონფიგურაცია — tsconfig.json).", '"strict": true — მის გარეშე TypeScript დიდ ნაწილს ვერ შეამოწმებს.'],
+  },
+  "ts-recap": {
+    tasks: [
+      { level: "medium", q: "აღწერე interface-ით სტუდენტი და დაწერე ფუნქცია, რომელიც საშუალო ქულას ითვლის." },
+      { level: "hard", q: "აიღე შენი ერთი JS ფაილი და გადაიყვანე TypeScript-ზე strict რეჟიმში." },
+    ],
+  },
+  "ts-resources": {
+    tasks: [
+      { level: "easy", q: "გახსენი TypeScript Playground და სცადე ტიპის შეცდომის დანახვა." },
+      { level: "medium", q: "გაიარე Total TypeScript-ის პირველი გაკვეთილები." },
+    ],
+  },
+
   // ===================== თავი 4 — JavaScript =====================
   "js-intro": {
     tasks: [
