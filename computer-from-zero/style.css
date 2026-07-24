@@ -2800,6 +2800,15 @@ body:not([data-authed]) .app-main {
   line-height: 1.55;
   white-space: pre-wrap;
 }
+/* გამშვები უხილავია, მაგრამ დახატული — display:none ბრაუზერს ტაიმერებს ახშობინებს */
 .js-runner {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  pointer-events: none;
+}
+.js-playground {
+  position: relative;
 }

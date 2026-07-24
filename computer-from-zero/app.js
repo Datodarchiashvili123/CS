@@ -13,6 +13,7 @@
     js: window.JsLessons || [],
     ts: window.TsLessons || [],
     node: window.NodeLessons || [],
+    ng: window.AngularLessons || [],
   };
   function lessonsFor(chapterId) {
     return COURSES[chapterId] || [];
@@ -33,6 +34,7 @@
     { id: "js", title: "JavaScript", available: true },
     { id: "ts", title: "TypeScript", available: true },
     { id: "node", title: "Node.js", available: true },
+    { id: "ng", title: "Angular", available: true },
   ];
 
   const NAV = [
@@ -64,6 +66,7 @@
     createJsPlayground,
     createTsPlayground,
     createNodePlayground,
+    createAngularPlayground,
     stripTypes,
     rgbOf,
     isColorNear,
@@ -563,7 +566,7 @@
       timer = window.setTimeout(function () {
         output.textContent = "⏱ კოდი ძალიან დიდხანს სრულდება — შესაძლოა უსასრულო ციკლია.";
         if (onResult) onResult(false, "კოდი ვერ დასრულდა (შეამოწმე ციკლი).", []);
-      }, 3000);
+      }, 6000);
 
       // სამი ცალკე სკრიპტი: თუ მომხმარებლის კოდს სინტაქსური შეცდომა აქვს,
       // მეორე ბლოკი საერთოდ არ გაიშვება — მესამე კი მაინც გაიშვება და შეცდომას დააბრუნებს.
@@ -855,6 +858,325 @@
       i++;
     }
     return out;
+  }
+
+  // კლასის დეკორატორები: @Component({...}) class X {}  ->  class X {}; X.__meta = {...};
+  function stripDecorators(src) {
+    let s = src;
+
+    // წევრის დეკორატორები: @Input() x = 1;  @Output() y = ...;  @ViewChild(...) z;
+    s = s.replace(/@(Input|Output|ViewChild|ViewChildren|HostListener|HostBinding)\s*\([^)]*\)\s*/g, "");
+
+    // კლასის დეკორატორები
+    const re = /@([A-Z][\w$]*)\s*\(/g;
+    let m;
+    while ((m = re.exec(s))) {
+      const decoName = m[1];
+      const argStart = m.index + m[0].length - 1; // "(" -ზე
+      // დავითვალოთ დაბალანსებული ფრჩხილები
+      let d = 0, i = argStart, inStr = null;
+      for (; i < s.length; i++) {
+        const c = s[i];
+        if (inStr) { if (c === inStr && s[i - 1] !== "\\") inStr = null; continue; }
+        if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
+        if (c === "(") d++;
+        else if (c === ")") { d--; if (d === 0) break; }
+      }
+      const argsRaw = s.slice(argStart + 1, i).trim();
+      // დეკორატორის შემდეგ უნდა მოდიოდეს (export)? class Name
+      const after = s.slice(i + 1);
+      const cm = after.match(/^\s*(?:export\s+)?(?:default\s+)?class\s+([A-Za-z_$][\w$]*)/);
+      if (!cm) { re.lastIndex = i + 1; continue; }
+
+      const className = cm[1];
+      const classStart = i + 1 + cm.index + cm[0].length - ("class " + className).length;
+      // ვიპოვოთ კლასის სხეულის დასასრული
+      const bodyOpen = s.indexOf("{", i + 1 + cm.index + cm[0].length);
+      let bd = 0, j = bodyOpen;
+      for (; j < s.length; j++) {
+        if (s[j] === "{") bd++;
+        else if (s[j] === "}") { bd--; if (bd === 0) break; }
+      }
+      const classSrc = s.slice(i + 1 + cm.index, j + 1).replace(/^\s*(?:export\s+)?(?:default\s+)?/, "");
+      const meta = argsRaw ? argsRaw : "{}";
+      const replacement = classSrc + "\n" + className + ".__meta = " + meta + ";\n" +
+        className + ".__deco = " + JSON.stringify(decoName) + ";" +
+        (decoName === "Component" ? "\nif (typeof __register === \"function\") __register(" + className + ");" : "");
+      s = s.slice(0, m.index) + replacement + s.slice(j + 1);
+      re.lastIndex = 0;
+    }
+    return s;
+  }
+
+  // მინი-Angular — სასწავლო runtime (კომპონენტები, შაბლონები, სიგნალები, DI).
+  const NG_PREAMBLE = `
+var __ng = (function () {
+  var __dirty = false;
+  var __roots = [];
+
+  function scheduleRender() {
+    if (__dirty) return;
+    __dirty = true;
+    Promise.resolve().then(function () { __dirty = false; __roots.forEach(function (r) { r.render(); }); });
+  }
+
+  // ---------- სიგნალები ----------
+  function signal(initial) {
+    var value = initial;
+    var s = function () { return value; };
+    s.set = function (v) { value = v; scheduleRender(); };
+    s.update = function (fn) { s.set(fn(value)); };
+    s.__signal = true;
+    return s;
+  }
+  function computed(fn) {
+    var c = function () { return fn(); };
+    c.__signal = true;
+    c.__computed = true;
+    return c;
+  }
+  function effect(fn) { fn(); return { destroy: function () {} }; }
+
+  // ---------- DI ----------
+  var __instances = new Map();
+  function inject(token) {
+    if (!__instances.has(token)) __instances.set(token, new token());
+    return __instances.get(token);
+  }
+  function provide(token, instance) { __instances.set(token, instance); }
+  function __resetDI() { __instances = new Map(); }
+
+  // ---------- EventEmitter ----------
+  function EventEmitter() { this.__subs = []; }
+  EventEmitter.prototype.subscribe = function (fn) {
+    this.__subs.push(fn);
+    var self = this;
+    return { unsubscribe: function () { self.__subs = self.__subs.filter(function (f) { return f !== fn; }); } };
+  };
+  EventEmitter.prototype.emit = function (v) {
+    this.__subs.slice().forEach(function (f) { f(v); });
+  };
+
+  // ---------- გამოსახულების გამოთვლა ----------
+  function evaluate(expr, ctx, locals) {
+    try {
+      var fn = new Function("__ctx", "__locals",
+        "with (__locals) { with (__ctx) { return (" + expr + "); } }");
+      return fn(ctx, locals || {});
+    } catch (e) { return undefined; }
+  }
+  function runStatement(expr, ctx, locals) {
+    try {
+      var fn = new Function("__ctx", "__locals", "$event",
+        "with (__locals) { with (__ctx) { " + expr + "; } }");
+      return fn(ctx, locals || {}, arguments[3]);
+    } catch (e) { console.log("შეცდომა შაბლონში:", e.message); }
+  }
+
+  function interpolate(text, ctx, locals) {
+    return text.replace(/\\{\\{([^}]+)\\}\\}/g, function (m, expr) {
+      var v = evaluate(expr.trim(), ctx, locals);
+      if (v === undefined || v === null) return "";
+      if (typeof v === "object") { try { return JSON.stringify(v); } catch (e) { return String(v); } }
+      return String(v);
+    });
+  }
+
+  // ---------- კომპონენტების რეესტრი ----------
+  var __components = [];
+  function registerComponent(cls) {
+    if (cls && cls.__meta && cls.__meta.selector) __components.push(cls);
+  }
+  function findComponent(tagName) {
+    var t = String(tagName).toLowerCase();
+    for (var i = 0; i < __components.length; i++) {
+      if (String(__components[i].__meta.selector).toLowerCase() === t) return __components[i];
+    }
+    return null;
+  }
+
+  // ---------- რენდერი ----------
+  function renderInto(host, tpl, ctx, locals) {
+    host.innerHTML = tpl;
+    processChildren(host, ctx, locals || {});
+  }
+
+  function processChildren(parent, ctx, locals) {
+    var nodes = [].slice.call(parent.childNodes);
+    nodes.forEach(function (node) { processNode(node, ctx, locals); });
+  }
+
+  function processNode(node, ctx, locals) {
+    if (node.nodeType === 3) {
+      if (node.nodeValue.indexOf("{{") !== -1) {
+        node.nodeValue = interpolate(node.nodeValue, ctx, locals);
+      }
+      return;
+    }
+    if (node.nodeType !== 1) return;
+
+    // *ngFor
+    var forExpr = node.getAttribute && node.getAttribute("*ngFor");
+    if (forExpr) {
+      node.removeAttribute("*ngFor");
+      var m = forExpr.match(/let\\s+([A-Za-z_$][\\w$]*)\\s+of\\s+(.+)/);
+      if (m) {
+        var itemName = m[1];
+        var listExpr = m[2].trim();
+        var list = evaluate(listExpr, ctx, locals) || [];
+        if (typeof list === "function") list = list();
+        var parentEl = node.parentNode;
+        var frag = document.createDocumentFragment();
+        [].slice.call(list).forEach(function (item, index) {
+          var clone = node.cloneNode(true);
+          var childLocals = Object.create(locals);
+          childLocals[itemName] = item;
+          childLocals["$index"] = index;
+          processNode(clone, ctx, childLocals);
+          frag.appendChild(clone);
+        });
+        parentEl.replaceChild(frag, node);
+      }
+      return;
+    }
+
+    // *ngIf
+    var ifExpr = node.getAttribute && node.getAttribute("*ngIf");
+    if (ifExpr) {
+      node.removeAttribute("*ngIf");
+      var cond = evaluate(ifExpr, ctx, locals);
+      if (typeof cond === "function") cond = cond();
+      if (!cond) { node.parentNode.removeChild(node); return; }
+    }
+
+    // ატრიბუტები: [prop]="expr" და (event)="stmt"
+    var attrs = [].slice.call(node.attributes || []);
+    attrs.forEach(function (a) {
+      var name = a.name;
+      var val = a.value;
+      if (name[0] === "[" && name[name.length - 1] === "]") {
+        var prop = name.slice(1, -1);
+        var v = evaluate(val, ctx, locals);
+        if (typeof v === "function" && v.__signal) v = v();
+        node.removeAttribute(name);
+        if (prop.indexOf("class.") === 0) {
+          var cls = prop.slice(6);
+          if (v) node.classList.add(cls); else node.classList.remove(cls);
+          return;
+        }
+        if (prop.indexOf("style.") === 0) {
+          var rest = prop.slice(6).split(".");
+          var styleProp = rest[0];
+          var unit = rest[1] || "";
+          try { node.style[styleProp] = (v === undefined || v === null) ? "" : v + unit; } catch (e) {}
+          return;
+        }
+        if (prop === "class" || prop === "id" || prop === "src" || prop === "href" || prop === "title" || prop === "alt") {
+          if (v !== undefined && v !== null) node.setAttribute(prop, v);
+        } else if (prop === "disabled" || prop === "checked") {
+          if (v) node.setAttribute(prop, ""); else node.removeAttribute(prop);
+          node[prop] = !!v;
+        } else {
+          try { node[prop] = v; } catch (e) { node.setAttribute(prop, v); }
+        }
+        node.__bound = node.__bound || {};
+        node.__bound[prop] = v;
+      } else if (name[0] === "(" && name[name.length - 1] === ")") {
+        var ev = name.slice(1, -1);
+        node.removeAttribute(name);
+        (function (statement, evName) {
+          node.addEventListener(evName, function (e) {
+            runStatement(statement, ctx, locals, e);
+            scheduleRender();
+          });
+        })(val, ev);
+      } else if (val && val.indexOf("{{") !== -1) {
+        node.setAttribute(name, interpolate(val, ctx, locals));
+      }
+    });
+
+    // შვილი კომპონენტი
+    var childCls = findComponent(node.tagName);
+    if (childCls) {
+      var instance = new childCls();
+      // @Input-ები [prop] ბმულებიდან
+      if (node.__bound) {
+        Object.keys(node.__bound).forEach(function (k) { instance[k] = node.__bound[k]; });
+      }
+      if (typeof instance.ngOnInit === "function") instance.ngOnInit();
+      renderInto(node, childCls.__meta.template || "", instance, {});
+      return;
+    }
+
+    processChildren(node, ctx, locals);
+  }
+
+  // ---------- bootstrap ----------
+  function bootstrap(cls, hostSelector) {
+    var host = document.querySelector(hostSelector || "#app");
+    if (!host) { console.log("ჰოსტი ვერ მოიძებნა:", hostSelector); return null; }
+    var instance = new cls();
+    if (typeof instance.ngOnInit === "function") instance.ngOnInit();
+    var root = {
+      instance: instance,
+      render: function () { renderInto(host, cls.__meta.template || "", instance, {}); }
+    };
+    __roots = [root];
+    root.render();
+    return instance;
+  }
+
+  function __html(sel) {
+    var el = document.querySelector(sel || "#app");
+    return el ? el.innerHTML.replace(/\\s+/g, " ").trim() : "";
+  }
+  function __text(sel) {
+    var el = document.querySelector(sel || "#app");
+    return el ? el.textContent.replace(/\\s+/g, " ").trim() : "";
+  }
+  function __flush() {
+    // რენდერი მიკროამოცანაა — რამდენიმე ბიჯი საკმარისია (ტაიმერს არ ველოდებით)
+    return Promise.resolve().then(function () {}).then(function () {}).then(function () {});
+  }
+  function __click(sel) {
+    var el = document.querySelector(sel);
+    if (el) el.click();
+    return __flush();
+  }
+  function __tick() { return __flush(); }
+
+  return {
+    signal: signal, computed: computed, effect: effect,
+    inject: inject, provide: provide, resetDI: __resetDI,
+    EventEmitter: EventEmitter,
+    registerComponent: registerComponent,
+    bootstrap: bootstrap,
+    html: __html, text: __text, click: __click, tick: __tick
+  };
+})();
+
+var signal = __ng.signal;
+var computed = __ng.computed;
+var effect = __ng.effect;
+var inject = __ng.inject;
+var provide = __ng.provide;
+var EventEmitter = __ng.EventEmitter;
+var bootstrapApplication = function (cls, host) { return __ng.bootstrap(cls, host); };
+var __html = __ng.html;
+var __text = __ng.text;
+var __click = __ng.click;
+var __tick = __ng.tick;
+var __register = __ng.registerComponent;
+`;
+
+  function createAngularPlayground(starter, testSource, onResult) {
+    return createJsPlayground(starter, testSource, onResult, {
+      preamble: NG_PREAMBLE,
+      transform: function (code) { return stripTypes(stripDecorators(code)); },
+      exposeSource: true,
+      html: '<div id="app"></div>',
+      label: "Angular — დაწერე და გაუშვი",
+    });
   }
 
   // Node.js-ის სიმულატორი — ბრაუზერში fs/http/require არ არსებობს, ამიტომ ვქმნით სასწავლო გარემოს.
