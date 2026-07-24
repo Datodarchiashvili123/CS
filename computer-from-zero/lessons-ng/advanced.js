@@ -7,7 +7,7 @@
     theory: "ველიდან მნიშვნელობის აღება (input) მოვლენით ხდება: $event.target.value. Angular-ს აქვს ორმხრივი ბმაც — [(ngModel)] — მაგრამ საფუძველი ეს ორი ბმაა: [value] ქვემოთ, (input) ზემოთ.",
     analogy: "ორმხრივი გზა: მონაცემი ეკრანზე ჩანს და ეკრანიდან უკან ბრუნდება.",
     label: "შაბლონი",
-    syntax: "<input [value]=\"saxeli()\" (input)=\"shecvla($event)\"> და მეთოდში: this.saxeli.set(e.target.value). ნამდვილ Angular-ში დიდი ფორმებისთვის Reactive Forms გამოიყენება (FormControl, FormGroup).",
+    syntax: "<input [value]=\"saxeli()\" (input)=\"shecvla($event)\"> და მეთოდში: this.saxeli.set(e.target.value). Angular v22-ში სტაბილური გახდა Signal Forms — სიგნალებზე აგებული ფორმების სისტემა ვალიდაციით. ძველ პროექტებში Reactive Forms (FormControl/FormGroup) ნახავ.",
     challenge: "დააკავშირე ველი სიგნალთან — აკრეფისას ტექსტი ქვემოთ უნდა განახლდეს.",
     starter: '@Component({\n  selector: "app-root",\n  template: \'<input id="in" [value]="saxeli()" (input)="shecvla($event)">\' +\n            \'<p id="out">გამარჯობა, {{ saxeli() }}!</p>\'\n})\nclass AppComponent {\n  saxeli = signal("სტუმარო");\n  shecvla(e) {\n    this.saxeli.set(e.target.value);\n  }\n}' + BOOT,
     test: 'return __tick().then(function(){ var i = document.querySelector("#in"); if(!i) return false; i.value = "ელენე"; i.dispatchEvent(new Event("input")); return __tick().then(function(){ return document.querySelector("#out").textContent.indexOf("ელენე") !== -1; }); });',
@@ -22,7 +22,7 @@
     label: "მასივი სიგნალში",
     syntax: "მასივის შეცვლისას ახალი მასივი დააბრუნე: items.update(a => [...a, axali]) და წაშლისას items.update(a => a.filter(...)). ძველის პირდაპირ შეცვლა (push) Angular-მა შეიძლება ვერ შეამჩნიოს.",
     challenge: "დაამატე პუნქტი სიაში ღილაკზე დაჭერით.",
-    starter: '@Component({\n  selector: "app-root",\n  template: \'<button id="add" (click)="damateba()">დამატება</button>\' +\n            \'<ul><li *ngFor="let t of sia()">{{ t }}</li></ul>\' +\n            \'<p id="c">სულ: {{ sia().length }}</p>\'\n})\nclass AppComponent {\n  sia = signal(["პური", "რძე"]);\n  n = 0;\n\n  damateba() {\n    this.n = this.n + 1;\n    var axali = "პროდუქტი " + this.n;\n    this.sia.update(function (a) { return a.concat([axali]); });\n  }\n}' + BOOT,
+    starter: '@Component({\n  selector: "app-root",\n  template: `\n    <button id="add" (click)="damateba()">დამატება</button>\n    <ul>\n      @for (t of sia(); track t) {\n        <li>{{ t }}</li>\n      } @empty {\n        <li>სია ცარიელია</li>\n      }\n    </ul>\n    <p id="c">სულ: {{ sia().length }}</p>\n  `\n})\nclass AppComponent {\n  sia = signal(["პური", "რძე"]);\n  n = 0;\n\n  damateba() {\n    this.n = this.n + 1;\n    var axali = "პროდუქტი " + this.n;\n    this.sia.update(function (a) { return a.concat([axali]); });\n  }\n}' + BOOT,
     test: 'return __tick().then(function(){ return __click("#add"); }).then(function(){ return __tick(); }).then(function(){ return document.querySelectorAll("#app li").length === 3 && document.querySelector("#c").textContent.indexOf("3") !== -1; });',
     hint: "sia.update(a => a.concat([axali]))",
     note: "სცადე წაშლის ღილაკის დამატებაც: (click)=\"washla(t)\" და მეთოდში sia.update(a => a.filter(x => x !== t)). ეს უკვე სრული CRUD-ია.",
@@ -55,16 +55,16 @@
   });
 
   A({
-    id: "ng-standalone", title: "Standalone კომპონენტები", short: "standalone",
-    theory: "ადრე Angular-ში ყველა კომპონენტი NgModule-ში უნდა დარეგისტრირებულიყო. თანამედროვე Angular-ში (v15+) კომპონენტი standalone-ია: ის თავად აცხადებს, რა სჭირდება.",
-    analogy: "ადრე ყველა ხელსაწყო ცენტრალურ საწყობში ირიცხებოდა; ახლა თითოს თავისი ჩანთა აქვს.",
-    label: "სინტაქსი",
-    syntax: "@Component({ standalone: true, imports: [CommonModule, OtherComponent], ... }). imports-ში წერია ის, რასაც ამ კომპონენტის შაბლონი იყენებს. ახალი პროექტები ნაგულისხმევად standalone-ია — NgModule აღარ სჭირდება.",
-    challenge: "დაწერე კომპონენტი standalone: true და imports ველებით.",
-    starter: '@Component({\n  selector: "app-root",\n  standalone: true,\n  imports: [],\n  template: "<h3>{{ sataury }}</h3><p>ეს standalone კომპონენტია</p>"\n})\nclass AppComponent {\n  sataury = "თანამედროვე Angular";\n}' + BOOT,
-    test: 'return __tick().then(function(){ return AppComponent.__meta.standalone === true && Array.isArray(AppComponent.__meta.imports) && __text("#app").indexOf("standalone") !== -1; });',
-    hint: "მეტამონაცემებში დაამატე standalone: true და imports: []",
-    note: "თუ სახელმძღვანელოში NgModule, declarations და app.module.ts ნახე — ეს ძველი სტილია. ახალ პროექტში standalone გამოიყენე, ბევრად ნაკლები კოდია.",
+    id: "ng-standalone", title: "თანამედროვე Angular — standalone, zoneless, OnPush", short: "თანამედროვე Angular",
+    theory: "ბოლო ვერსიებში Angular მკვეთრად გამარტივდა: კომპონენტი ნაგულისხმევად standalone-ია (v19+), ცვლილების აღმოჩენა zoneless-ია და Zone.js აღარ ჩაირთვება (v21+), ხოლო v22-ში OnPush ნაგულისხმევი სტრატეგიაა.",
+    analogy: "ადრე ყველა ხელსაწყო ცენტრალურ საწყობში ირიცხებოდა; ახლა თითოს თავისი ჩანთა აქვს — და საწყობი საერთოდ აღარ არსებობს.",
+    label: "რა შეიცვალა",
+    syntax: "„standalone: true“ ხელით წერა აღარ გჭირდება — ის ნაგულისხმევია. imports-ში მხოლოდ ის ჩამოთვალე, რასაც შაბლონი მართლა იყენებს. გაშვება ფუნქციური პროვაიდერებით: bootstrapApplication(AppComponent, { providers: [provideRouter(routes), provideHttpClient()] }).",
+    challenge: "დაწერე კომპონენტი imports ველით — standalone აღარ იწერება, ის ნაგულისხმევია.",
+    starter: '@Component({\n  selector: "app-root",\n  imports: [],\n  template: "<h3>{{ sataury }}</h3><p>standalone ნაგულისხმევია — ხელით წერა აღარ სჭირდება</p>"\n})\nclass AppComponent {\n  sataury = "თანამედროვე Angular v22";\n}' + BOOT,
+    test: 'return __tick().then(function(){ return Array.isArray(AppComponent.__meta.imports) && __text("#app").indexOf("standalone") !== -1; });',
+    hint: "მეტამონაცემებში დაამატე imports: []",
+    note: "თუ სახელმძღვანელოში NgModule, declarations ან app.module.ts ნახე — ეს ძველი სტილია (Angular 14-მდე). zoneless-ის წყალობით აპლიკაცია უფრო სწრაფია და ცვლილებას სიგნალები იჭერენ.",
   });
 
   A({
@@ -74,7 +74,7 @@
     label: "სტრუქტურა",
     syntax: "routes = [{ path: \"\", component: HomeComponent }, { path: \"users/:id\", component: UserComponent }, { path: \"**\", component: NotFoundComponent }]. შაბლონში <router-outlet></router-outlet> აჩვენებს მიმდინარე კომპონენტს, ნავიგაცია კი routerLink-ით ხდება.",
     challenge: "აღწერე მარშრუტების მასივი სამი გზით (მთავარი, პარამეტრიანი და 404).",
-    starter: '// ნამდვილ Angular-ში:\n// import { provideRouter } from "@angular/router";\n// <router-outlet></router-outlet> და <a routerLink="/about">\n\nconst routes = [\n  { path: "", component: "HomeComponent" },\n  { path: "users/:id", component: "UserComponent" },\n  { path: "**", component: "NotFoundComponent" }\n];\n\n@Component({\n  selector: "app-root",\n  template: \'<ul><li *ngFor="let r of gzebi">{{ r.path || "(მთავარი)" }} → {{ r.component }}</li></ul>\'\n})\nclass AppComponent {\n  gzebi = routes;\n}' + BOOT,
+    starter: '// ნამდვილ Angular v22-ში:\n// bootstrapApplication(App, { providers: [provideRouter(routes)] });\n// <router-outlet /> და <a routerLink="/about">\n\nconst routes = [\n  { path: "", component: "HomeComponent" },\n  { path: "users/:id", component: "UserComponent" },\n  { path: "**", component: "NotFoundComponent" }\n];\n\n@Component({\n  selector: "app-root",\n  template: `<ul>@for (r of gzebi; track r.path) { <li>{{ r.path || "(მთავარი)" }} → {{ r.component }}</li> }</ul>`\n})\nclass AppComponent {\n  gzebi = routes;\n}' + BOOT,
     test: 'return __tick().then(function(){ return routes.length === 3 && routes.some(function(r){ return r.path.indexOf(":") !== -1; }) && routes.some(function(r){ return r.path === "**"; }) && document.querySelectorAll("#app li").length === 3; });',
     hint: 'მასივში სამი ობიექტი: "", "users/:id" და "**"',
     note: "\"**\" ყოველთვის ბოლოს უნდა იყოს — ის ყველა დარჩენილ მისამართს იჭერს. თუ ზემოთ დააყენებ, დანარჩენ მარშრუტებამდე ვერ მიაღწევ.",
@@ -82,12 +82,12 @@
 
   A({
     id: "ng-http", title: "HTTP და მონაცემები სერვერიდან", short: "HTTP",
-    theory: "რეალურ აპლიკაციაში მონაცემი სერვერიდან მოდის. Angular-ს აქვს HttpClient, რომელიც მოთხოვნებს აგზავნის და Observable-ს აბრუნებს.",
+    theory: "რეალურ აპლიკაციაში მონაცემი სერვერიდან მოდის. Angular v22-ში ამისთვის სტაბილურია httpResource() — ის მოთხოვნას აგზავნის და შედეგს პირდაპირ სიგნალებად გაძლევს: value(), isLoading() და error().",
     analogy: "შეკვეთა სამზარეულოში: აგზავნი მოთხოვნას და პასუხს ელოდები — ინტერფეისი ამასობაში „იტვირთება“-ს აჩვენებს.",
     label: "შაბლონი",
-    syntax: "http = inject(HttpClient); this.http.get(\"/api/users\").subscribe(d => this.users = d). თანამედროვე ალტერნატივაა resource()/toSignal(). სამი მდგომარეობა ყოველთვის გაითვალისწინე: იტვირთება, შეცდომა, მონაცემი.",
+    syntax: "თანამედროვე: users = httpResource(() => \"/api/users\"); შაბლონში კი users.isLoading(), users.value() და users.error(). რეგისტრაცია: provideHttpClient(). ძველი გზა: http = inject(HttpClient); this.http.get(...).subscribe(...). სამი მდგომარეობა ყოველთვის გაითვალისწინე: იტვირთება, შეცდომა, მონაცემი.",
     challenge: "დაასიმულირე ჩატვირთვა: ჯერ „იტვირთება“, მერე მონაცემი.",
-    starter: '// ნამდვილ Angular-ში:\n// http = inject(HttpClient);\n// this.http.get("/api/users").subscribe(d => this.users.set(d));\n\n@Component({\n  selector: "app-root",\n  template: \'<p id="s" *ngIf="itvirteba()">იტვირთება...</p>\' +\n            \'<ul><li *ngFor="let u of users()">{{ u }}</li></ul>\'\n})\nclass AppComponent {\n  itvirteba = signal(true);\n  users = signal([]);\n\n  ngOnInit() {\n    var self = this;\n    setTimeout(function () {\n      self.users.set(["ელენე", "ნატალი"]);\n      self.itvirteba.set(false);\n    }, 20);\n  }\n}' + BOOT,
+    starter: '// ნამდვილ Angular v22-ში:\n// users = httpResource(() => "/api/users");\n// შაბლონში: users.isLoading(), users.value(), users.error()\n\n@Component({\n  selector: "app-root",\n  template: `\n    @if (itvirteba()) {\n      <p id="s">იტვირთება...</p>\n    }\n    <ul>\n      @for (u of users(); track u) {\n        <li>{{ u }}</li>\n      }\n    </ul>\n  `\n})\nclass AppComponent {\n  itvirteba = signal(true);\n  users = signal([]);\n\n  ngOnInit() {\n    var self = this;\n    setTimeout(function () {\n      self.users.set(["ელენე", "ნატალი"]);\n      self.itvirteba.set(false);\n    }, 20);\n  }\n}' + BOOT,
     test: 'return __tick().then(function(){ return new Promise(function(r){ setTimeout(r, 120); }); }).then(function(){ return document.querySelectorAll("#app li").length === 2 && document.querySelector("#s") === null; });',
     hint: "ngOnInit-ში setTimeout, რომელიც users.set(...) და itvirteba.set(false) აკეთებს.",
     note: "ჩატვირთვისა და შეცდომის მდგომარეობები ხშირად ავიწყდებათ — მომხმარებელი კი ცარიელ ეკრანს უყურებს და ვერ ხვდება, რა ხდება. ყოველთვის აჩვენე, რომ სისტემა მუშაობს.",
@@ -100,7 +100,7 @@
     label: "ძირითადი ბრძანებები",
     syntax: "npm install -g @angular/cli — დაყენება. ng new chemi-app — ახალი პროექტი. ng serve — დეველოპმენტ სერვერი (localhost:4200). ng generate component card (მოკლედ: ng g c card) — ახალი კომპონენტი. ng build — პროდაქშენ ვერსია.",
     challenge: "აღწერე პროექტის სტრუქტურა ობიექტად — უნდა შეიცავდეს src, app და კომპონენტების საქაღალდეს.",
-    starter: '// ტიპური Angular პროექტი:\nconst struqtura = {\n  "src/main.ts": "აპლიკაციის გაშვების წერტილი",\n  "src/app/app.component.ts": "ძირითადი კომპონენტი",\n  "src/app/components/": "კომპონენტები",\n  "src/app/services/": "სერვისები",\n  "angular.json": "პროექტის კონფიგურაცია",\n  "package.json": "დამოკიდებულებები"\n};\n\n@Component({\n  selector: "app-root",\n  template: \'<ul><li *ngFor="let k of gasagebebi">{{ k }}</li></ul>\'\n})\nclass AppComponent {\n  gasagebebi = Object.keys(struqtura);\n}' + BOOT,
+    starter: '// ტიპური Angular პროექტი:\nconst struqtura = {\n  "src/main.ts": "აპლიკაციის გაშვების წერტილი",\n  "src/app/app.component.ts": "ძირითადი კომპონენტი",\n  "src/app/components/": "კომპონენტები",\n  "src/app/services/": "სერვისები",\n  "angular.json": "პროექტის კონფიგურაცია",\n  "package.json": "დამოკიდებულებები"\n};\n\n@Component({\n  selector: "app-root",\n  template: `<ul>@for (k of gasagebebi; track k) { <li>{{ k }}</li> }</ul>`\n})\nclass AppComponent {\n  gasagebebi = Object.keys(struqtura);\n}' + BOOT,
     test: 'return __tick().then(function(){ var k = Object.keys(struqtura); return k.length >= 5 && k.some(function(x){ return x.indexOf("src/app") !== -1; }) && document.querySelectorAll("#app li").length === k.length; });',
     hint: "ობიექტში მინიმუმ 5 გასაღები, მათ შორის src/app-ით დაწყებული.",
     note: "ng generate მხოლოდ ფაილებს არ ქმნის — ის სწორ სტრუქტურასა და სახელებსაც იცავს. გუნდში მუშაობისას ეს თანმიმდევრულობა ძალიან ღირებულია.",
@@ -127,7 +127,7 @@
     theory: "კომპონენტიდან და შაბლონიდან — სიგნალებამდე, სერვისებამდე და DI-მდე. ეს არის ის ბაზა, რომლითაც უკვე ნამდვილი Angular აპლიკაცია იწერება.",
     analogy: "ექვსივე თავი ერთად: ტრანზისტორიდან, რომელიც პირველ თავში ვნახეთ, იმ აპლიკაციამდე, რომელსაც ახლა წერ.",
     physicalLabel: "რა მოდის შემდეგ",
-    physical: "შემდეგი ნაბიჯები: Reactive Forms, HttpClient და interceptors, Router-ის guards, RxJS, ტესტირება (Jasmine/Karma ან Vitest), NgRx დიდი აპლიკაციის მდგომარეობისთვის. და რაც მთავარია — საკუთარი პროექტი.",
+    physical: "შემდეგი ნაბიჯები: Signal Forms, httpResource და interceptors, Router-ის guards, @defer (ზარმაცი ჩატვირთვა), SSR/hydration, ტესტირება (Vitest) და NgRx დიდი აპლიკაციის მდგომარეობისთვის. და რაც მთავარია — საკუთარი პროექტი.",
     challenge: "დააჭირე ნებისმიერ თემას გასამეორებლად.",
 
     createSimulation: function (container, setChallengeResult) {
@@ -136,10 +136,10 @@
         { to: "ng-component", title: "კომპონენტი", desc: "@Component, selector, template" },
         { to: "ng-interpolation", title: "შაბლონი", desc: "{{ }} ინტერპოლაცია" },
         { to: "ng-property-binding", title: "ბმები", desc: "[prop] და (event)" },
-        { to: "ng-ngif", title: "*ngIf / *ngFor", desc: "პირობა და სია" },
+        { to: "ng-ngif", title: "@if / @for / @switch", desc: "კონტროლის ნაკადი შაბლონში" },
         { to: "ng-signals", title: "სიგნალები", desc: "signal, set, update" },
         { to: "ng-computed", title: "computed", desc: "გამოთვლილი მნიშვნელობა" },
-        { to: "ng-input", title: "@Input / @Output", desc: "კომპონენტების კავშირი" },
+        { to: "ng-input", title: "input() / output()", desc: "კომპონენტების კავშირი" },
         { to: "ng-service", title: "სერვისები", desc: "@Injectable, ლოგიკის გატანა" },
         { to: "ng-di", title: "DI", desc: "inject() და გაზიარებული მდგომარეობა" },
         { to: "ng-lifecycle", title: "ცხოვრების ციკლი", desc: "ngOnInit, ngOnDestroy" },
@@ -162,7 +162,7 @@
       }));
 
       const pg = CFZ.createAngularPlayground(
-        '// პატარა სრული აპლიკაცია — ყველაფერი ერთად\n@Injectable()\nclass TodoService {\n  sia = signal(["ისწავლე Angular"]);\n  damateba(t) {\n    this.sia.update(function (a) { return a.concat([t]); });\n  }\n  washla(t) {\n    this.sia.update(function (a) { return a.filter(function (x) { return x !== t; }); });\n  }\n}\n\n@Component({\n  selector: "app-root",\n  standalone: true,\n  template: \'<h3>ჩემი სია ({{ svc.sia().length }})</h3>\' +\n            \'<button id="add" (click)="damateba()">დამატება</button>\' +\n            \'<ul><li *ngFor="let t of svc.sia()">{{ t }} <button (click)="svc.washla(t)">✕</button></li></ul>\'\n})\nclass AppComponent {\n  svc = inject(TodoService);\n  n = 0;\n  damateba() {\n    this.n = this.n + 1;\n    this.svc.damateba("ახალი საქმე " + this.n);\n  }\n}\n\nbootstrapApplication(AppComponent, "#app");',
+        '// პატარა სრული აპლიკაცია — ყველაფერი ერთად\n@Injectable({ providedIn: "root" })\nclass TodoService {\n  sia = signal(["ისწავლე Angular"]);\n  damateba(t) {\n    this.sia.update(function (a) { return a.concat([t]); });\n  }\n  washla(t) {\n    this.sia.update(function (a) { return a.filter(function (x) { return x !== t; }); });\n  }\n}\n\n@Component({\n  selector: "app-root",\n  template: `\n    <h3>ჩემი სია ({{ svc.sia().length }})</h3>\n    <button id="add" (click)="damateba()">დამატება</button>\n    <ul>\n      @for (t of svc.sia(); track t) {\n        <li>{{ t }} <button (click)="svc.washla(t)">✕</button></li>\n      } @empty {\n        <li>ცარიელია</li>\n      }\n    </ul>\n  `\n})\nclass AppComponent {\n  svc = inject(TodoService);\n  n = 0;\n  damateba() {\n    this.n = this.n + 1;\n    this.svc.damateba("ახალი საქმე " + this.n);\n  }\n}\n\nbootstrapApplication(AppComponent, "#app");',
         "return true;",
         function () {}
       );

@@ -920,6 +920,158 @@ var __ng = (function () {
     Promise.resolve().then(function () { __dirty = false; __roots.forEach(function (r) { r.render(); }); });
   }
 
+  // Angular-ის ახალი კონტროლის ნაკადი -> შიდა დირექტივები
+  function compileControlFlow(tpl) {
+    var s = String(tpl);
+    var guard = 0;
+    while (/@(if|for|switch)\\s*\\(/.test(s) && guard++ < 50) {
+      s = compileOne(s);
+    }
+    return s;
+  }
+
+  function findBlock(s, from) {
+    // from — "{" -ის ინდექსი; აბრუნებს [start, end] სხეულისთვის
+    var d = 0, i = from, inStr = null;
+    for (; i < s.length; i++) {
+      var c = s[i];
+      if (inStr) { if (c === inStr && s[i - 1] !== "\\\\") inStr = null; continue; }
+      if (c === '"' || c === "'") { inStr = c; continue; }
+      if (c === "{") d++;
+      else if (c === "}") { d--; if (d === 0) return [from + 1, i]; }
+    }
+    return null;
+  }
+
+  function matchParen(s, from) {
+    var d = 0, i = from, inStr = null;
+    for (; i < s.length; i++) {
+      var c = s[i];
+      if (inStr) { if (c === inStr && s[i - 1] !== "\\\\") inStr = null; continue; }
+      if (c === '"' || c === "'") { inStr = c; continue; }
+      if (c === "(") d++;
+      else if (c === ")") { d--; if (d === 0) return [from + 1, i]; }
+    }
+    return null;
+  }
+
+  function skipWs(s, i) { while (i < s.length && /\\s/.test(s[i])) i++; return i; }
+
+  function compileOne(s) {
+    var m = /@(if|for|switch)\\s*\\(/.exec(s);
+    if (!m) return s;
+    var kind = m[1];
+    var parenStart = m.index + m[0].length - 1;
+    var pr = matchParen(s, parenStart);
+    if (!pr) return s;
+    var head = s.slice(pr[0], pr[1]).trim();
+    var bodyOpen = skipWs(s, pr[1] + 1);
+    if (s[bodyOpen] !== "{") return s;
+    var br = findBlock(s, bodyOpen);
+    if (!br) return s;
+    var body = s.slice(br[0], br[1]);
+    var rest = br[1] + 1;
+    var out = "";
+
+    if (kind === "if") {
+      var conds = [head];
+      var bodies = [body];
+      var elseBody = null;
+      var k = skipWs(s, rest);
+      while (s.slice(k, k + 5) === "@else") {
+        var afterElse = skipWs(s, k + 5);
+        if (s.slice(afterElse, afterElse + 3) === "if " || s.slice(afterElse, afterElse + 3) === "if(") {
+          var ep = s.indexOf("(", afterElse);
+          var epr = matchParen(s, ep);
+          conds.push(s.slice(epr[0], epr[1]).trim());
+          var eo = skipWs(s, epr[1] + 1);
+          var ebr = findBlock(s, eo);
+          bodies.push(s.slice(ebr[0], ebr[1]));
+          k = skipWs(s, ebr[1] + 1);
+        } else {
+          var ebr2 = findBlock(s, afterElse);
+          elseBody = s.slice(ebr2[0], ebr2[1]);
+          k = skipWs(s, ebr2[1] + 1);
+          break;
+        }
+      }
+      rest = k;
+      var prev = [];
+      for (var i = 0; i < conds.length; i++) {
+        var guardExpr = prev.length ? prev.map(function (c) { return "!__u(" + c + ")"; }).join(" && ") + " && __u(" + conds[i] + ")" : "__u(" + conds[i] + ")";
+        out += '<ng-b *ngIf="' + esc(guardExpr) + '">' + bodies[i] + "</ng-b>";
+        prev.push(conds[i]);
+      }
+      if (elseBody !== null) {
+        var elseGuard = prev.map(function (c) { return "!__u(" + c + ")"; }).join(" && ");
+        out += '<ng-b *ngIf="' + esc(elseGuard) + '">' + elseBody + "</ng-b>";
+      }
+    } else if (kind === "for") {
+      // "item of items; track item.id"
+      var parts = head.split(";");
+      var loop = parts[0].trim().replace(/^let\\s+/, "");
+      var mm = /^([A-Za-z_$][\\w$]*)\\s+of\\s+([\\s\\S]+)$/.exec(loop);
+      if (!mm) return s.slice(0, m.index) + s.slice(rest);
+      var itemName = mm[1];
+      var listExpr = mm[2].trim();
+      var emptyBody = null;
+      var k2 = skipWs(s, rest);
+      if (s.slice(k2, k2 + 6) === "@empty") {
+        var eo2 = skipWs(s, k2 + 6);
+        var ebr3 = findBlock(s, eo2);
+        emptyBody = s.slice(ebr3[0], ebr3[1]);
+        k2 = skipWs(s, ebr3[1] + 1);
+      }
+      rest = k2;
+      out += '<ng-b *ngFor="let ' + itemName + " of " + esc(listExpr) + '">' + body + "</ng-b>";
+      if (emptyBody !== null) {
+        out += '<ng-b *ngIf="__empty(' + esc(listExpr) + ')">' + emptyBody + "</ng-b>";
+      }
+    } else if (kind === "switch") {
+      var cases = [];
+      var defBody = null;
+      var inner = body;
+      var pos = 0;
+      while (pos < inner.length) {
+        var cm = /@(case|default)\\s*/.exec(inner.slice(pos));
+        if (!cm) break;
+        var abs = pos + cm.index;
+        if (cm[1] === "case") {
+          var cp = inner.indexOf("(", abs);
+          var cpr = matchParen(inner, cp);
+          var val = inner.slice(cpr[0], cpr[1]).trim();
+          var co = skipWs(inner, cpr[1] + 1);
+          if (inner[co] !== "{") { cases.push({ v: val, body: null }); pos = co; continue; }
+          var cbr = findBlock(inner, co);
+          cases.push({ v: val, body: inner.slice(cbr[0], cbr[1]) });
+          pos = cbr[1] + 1;
+        } else {
+          var dOpen = skipWs(inner, abs + cm[0].length);
+          var dbr = findBlock(inner, dOpen);
+          defBody = inner.slice(dbr[0], dbr[1]);
+          pos = dbr[1] + 1;
+        }
+      }
+      var allVals = [];
+      var pending = [];
+      cases.forEach(function (c) {
+        pending.push(c.v);
+        allVals.push(c.v);
+        if (c.body === null) return;
+        var cond = pending.map(function (v) { return "__u(" + head + ") === " + v; }).join(" || ");
+        out += '<ng-b *ngIf="' + esc(cond) + '">' + c.body + "</ng-b>";
+        pending = [];
+      });
+      if (defBody !== null) {
+        var dCond = allVals.map(function (v) { return "__u(" + head + ") !== " + v; }).join(" && ") || "true";
+        out += '<ng-b *ngIf="' + esc(dCond) + '">' + defBody + "</ng-b>";
+      }
+    }
+    return s.slice(0, m.index) + out + s.slice(rest);
+  }
+
+  function esc(v) { return String(v).replace(/"/g, "&quot;"); }
+
   // ---------- სიგნალები ----------
   function signal(initial) {
     var value = initial;
@@ -936,6 +1088,45 @@ var __ng = (function () {
     return c;
   }
   function effect(fn) { fn(); return { destroy: function () {} }; }
+
+  // სიგნალის გახსნა (თუ ფუნქციაა — გამოვიძახოთ)
+  function __u(v) { return typeof v === "function" ? v() : v; }
+  function __empty(v) {
+    var list = __u(v);
+    return !list || list.length === 0;
+  }
+
+  // ---------- სიგნალური input / output / model ----------
+  function input(initial) {
+    var s = signal(initial);
+    var reader = function () { return s(); };
+    reader.__signal = true;
+    reader.__input = true;
+    reader.set = function (v) { s.set(v); };
+    return reader;
+  }
+  input.required = function () {
+    var r = input(undefined);
+    r.__required = true;
+    return r;
+  };
+  function output() {
+    var em = new EventEmitter();
+    var fn = function () { return em; };
+    fn.__output = true;
+    fn.emit = function (v) { em.emit(v); };
+    fn.subscribe = function (cb) { return em.subscribe(cb); };
+    return fn;
+  }
+  function model(initial) {
+    var s = signal(initial);
+    var reader = function () { return s(); };
+    reader.__signal = true;
+    reader.__model = true;
+    reader.set = function (v) { s.set(v); };
+    reader.update = function (f) { s.set(f(s())); };
+    return reader;
+  }
 
   // ---------- DI ----------
   var __instances = new Map();
@@ -984,6 +1175,9 @@ var __ng = (function () {
 
   // ---------- კომპონენტების რეესტრი ----------
   var __components = [];
+  // შვილი კომპონენტების ინსტანციები ინახება, რომ რენდერზე მდგომარეობა არ დაიკარგოს
+  var __childInstances = {};
+  var __childCounter = {};
   function registerComponent(cls) {
     if (cls && cls.__meta && cls.__meta.selector) __components.push(cls);
   }
@@ -997,8 +1191,20 @@ var __ng = (function () {
 
   // ---------- რენდერი ----------
   function renderInto(host, tpl, ctx, locals) {
-    host.innerHTML = tpl;
+    host.innerHTML = compileControlFlow(tpl);
     processChildren(host, ctx, locals || {});
+    unwrapBlocks(host);
+  }
+
+  // <ng-b> მხოლოდ შიდა ჩარჩოა — შედეგში არ უნდა დარჩეს
+  function unwrapBlocks(root) {
+    var blocks = [].slice.call(root.querySelectorAll("ng-b"));
+    blocks.forEach(function (b) {
+      var parent = b.parentNode;
+      if (!parent) return;
+      while (b.firstChild) parent.insertBefore(b.firstChild, b);
+      parent.removeChild(b);
+    });
   }
 
   function processChildren(parent, ctx, locals) {
@@ -1098,12 +1304,34 @@ var __ng = (function () {
     // შვილი კომპონენტი
     var childCls = findComponent(node.tagName);
     if (childCls) {
-      var instance = new childCls();
+      var __sel = String(childCls.__meta.selector).toLowerCase();
+      var __idx = (__childCounter[__sel] = (__childCounter[__sel] || 0) + 1) - 1;
+      var __key = __sel + "#" + __idx;
+      var instance = __childInstances[__key];
+      var __isNew = !instance;
+      if (__isNew) {
+        instance = new childCls();
+        __childInstances[__key] = instance;
+      }
       // @Input-ები [prop] ბმულებიდან
       if (node.__bound) {
-        Object.keys(node.__bound).forEach(function (k) { instance[k] = node.__bound[k]; });
+        Object.keys(node.__bound).forEach(function (k) {
+          var cur = instance[k];
+          var incoming = node.__bound[k];
+          instance.__lastBound = instance.__lastBound || {};
+          if (typeof cur === "function" && (cur.__input || cur.__model)) {
+            // ვაწესებთ მხოლოდ მაშინ, როცა მშობლის მნიშვნელობა შეიცვალა —
+            // თორემ model()-ის შიდა ცვლილებას ყოველ რენდერზე გადავაწერდით
+            if (!(k in instance.__lastBound) || instance.__lastBound[k] !== incoming) {
+              instance.__lastBound[k] = incoming;
+              if (cur() !== incoming) cur.set(incoming);
+            }
+          } else {
+            instance[k] = incoming;
+          }
+        });
       }
-      if (typeof instance.ngOnInit === "function") instance.ngOnInit();
+      if (__isNew && typeof instance.ngOnInit === "function") instance.ngOnInit();
       renderInto(node, childCls.__meta.template || "", instance, {});
       return;
     }
@@ -1115,11 +1343,16 @@ var __ng = (function () {
   function bootstrap(cls, hostSelector) {
     var host = document.querySelector(hostSelector || "#app");
     if (!host) { console.log("ჰოსტი ვერ მოიძებნა:", hostSelector); return null; }
+    __childInstances = {};
+    __childCounter = {};
     var instance = new cls();
     if (typeof instance.ngOnInit === "function") instance.ngOnInit();
     var root = {
       instance: instance,
-      render: function () { renderInto(host, cls.__meta.template || "", instance, {}); }
+      render: function () {
+        __childCounter = {};
+        renderInto(host, cls.__meta.template || "", instance, {});
+      }
     };
     __roots = [root];
     root.render();
@@ -1147,6 +1380,7 @@ var __ng = (function () {
 
   return {
     signal: signal, computed: computed, effect: effect,
+    input: input, output: output, model: model, u: __u, empty: __empty,
     inject: inject, provide: provide, resetDI: __resetDI,
     EventEmitter: EventEmitter,
     registerComponent: registerComponent,
@@ -1158,6 +1392,14 @@ var __ng = (function () {
 var signal = __ng.signal;
 var computed = __ng.computed;
 var effect = __ng.effect;
+var input = __ng.input;
+var output = __ng.output;
+var model = __ng.model;
+// შაბლონის გამოსახულებები new Function-ით სრულდება, რომელიც მხოლოდ გლობალურ სკოუპს ხედავს
+window.__u = __ng.u;
+window.__empty = __ng.empty;
+var __u = window.__u;
+var __empty = window.__empty;
 var inject = __ng.inject;
 var provide = __ng.provide;
 var EventEmitter = __ng.EventEmitter;

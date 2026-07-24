@@ -293,17 +293,31 @@ window.CFZExercises = {
   },
   "ng-ngif": {
     tasks: [
-      { level: "easy", q: "რა განსხვავებაა *ngIf-სა და [hidden]-ს შორის?" },
-      { level: "medium", q: "როგორია ახალი სინტაქსი Angular 17+-ში?" },
+      { level: "easy", q: "დაწერე @if / @else ბლოკი." },
+      { level: "medium", q: "რა განსხვავებაა @if-სა და CSS-ით დამალვას შორის?" },
     ],
-    answers: ["*ngIf ელემენტს DOM-იდან შლის; [hidden] მალავს, მაგრამ ტოვებს.", "@if (piroba) { ... }"],
+    answers: ["@if (piroba) { ... } @else { ... }", "@if ელემენტს DOM-იდან შლის; CSS მხოლოდ მალავს და ადგილს ტოვებს."],
   },
   "ng-ngfor": {
     tasks: [
-      { level: "easy", q: "დაწერე *ngFor მასივზე გასავლელად." },
-      { level: "medium", q: "როგორ მივიღოთ ინდექსი და რისთვის არის trackBy?" },
+      { level: "easy", q: "დაწერე @for ბლოკი track-ით." },
+      { level: "medium", q: "რისთვის არის track და @empty?" },
     ],
-    answers: ['*ngFor="let x of items"', 'let i = index; trackBy ზოგავს ხელახლა ხატვას დიდ სიებში.'],
+    answers: ['@for (x of items(); track x.id) { ... }', 'track ეუბნება Angular-ს, როგორ ამოიცნოს ელემენტი (ზოგავს ხელახლა ხატვას); @empty ცარიელი სიის შემთხვევაში ჩაირთვება.'],
+  },
+  "ng-switch": {
+    tasks: [
+      { level: "easy", q: "დაწერე @switch სამი ვარიანტით და @default-ით." },
+      { level: "medium", q: "რატომ არ სჭირდება @case-ს break?" },
+    ],
+    answers: ['@switch (v()) { @case ("a") { ... } @case ("b") { ... } @default { ... } }', "@case-ები ერთმანეთში არ „გადმოვარდება“ — თითო დამოუკიდებელია."],
+  },
+  "ng-model": {
+    tasks: [
+      { level: "medium", q: "რა განსხვავებაა input()-სა და model()-ს შორის?" },
+      { level: "medium", q: "როგორ იწერება ორმხრივი ბმა მშობელში?" },
+    ],
+    answers: ["input მხოლოდ იკითხება; model-ის შეცვლა შვილსაც შეუძლია და ცვლილება მშობელს უბრუნდება.", '<app-slider [(value)]="xmauri"></app-slider>'],
   },
   "ng-signals": {
     tasks: [
@@ -328,17 +342,17 @@ window.CFZExercises = {
   },
   "ng-input": {
     tasks: [
-      { level: "easy", q: "როგორ გადავცეთ მონაცემი მშობლიდან შვილს?" },
-      { level: "medium", q: "რა მიმართულებით მიედინება მონაცემი Angular-ში?" },
+      { level: "easy", q: "როგორ გადავცეთ მონაცემი მშობლიდან შვილს თანამედროვე სინტაქსით?" },
+      { level: "medium", q: "როგორ გავხადოთ input სავალდებულო?" },
     ],
-    answers: ['შვილში @Input() title; მშობელში <app-child [title]="x">', "ზემოდან ქვემოთ."],
+    answers: ['შვილში title = input(""); მშობელში <app-child [title]="x()">', "title = input.required<string>()"],
   },
   "ng-output": {
     tasks: [
-      { level: "medium", q: "როგორ გავუგზავნოთ მოვლენა შვილიდან მშობელს?" },
+      { level: "medium", q: "როგორ გავუგზავნოთ მოვლენა შვილიდან მშობელს თანამედროვე სინტაქსით?" },
       { level: "medium", q: "რას შეიცავს $event მშობლის მხარეს?" },
     ],
-    answers: ["@Output() x = new EventEmitter(); მერე this.x.emit(v)", "იმ მნიშვნელობას, რომელიც emit()-ს გადაეცა."],
+    answers: ["x = output<string>(); მერე this.x.emit(v) — EventEmitter აღარ სჭირდება", "იმ მნიშვნელობას, რომელიც emit()-ს გადაეცა."],
   },
   "ng-service": {
     tasks: [
@@ -391,10 +405,10 @@ window.CFZExercises = {
   },
   "ng-standalone": {
     tasks: [
-      { level: "easy", q: "რა არის standalone კომპონენტი?" },
-      { level: "medium", q: "რას წერენ imports ველში?" },
+      { level: "easy", q: "რატომ აღარ იწერება standalone: true?" },
+      { level: "medium", q: "რას ნიშნავს zoneless და როდის გახდა ნაგულისხმევი?" },
     ],
-    answers: ["კომპონენტი, რომელსაც NgModule არ სჭირდება — თავად აცხადებს დამოკიდებულებებს.", "იმას, რასაც ამ კომპონენტის შაბლონი იყენებს."],
+    answers: ["ის ნაგულისხმევია Angular 19-იდან.", "Zone.js აღარ ჩაირთვება და ცვლილებას სიგნალები იჭერენ — ნაგულისხმევია v21-იდან (v22-ში OnPush-იც ნაგულისხმევია)."],
   },
   "ng-routing": {
     tasks: [
@@ -406,9 +420,9 @@ window.CFZExercises = {
   "ng-http": {
     tasks: [
       { level: "medium", q: "დაასახელე სამი მდგომარეობა, რომელიც მონაცემის ჩატვირთვისას უნდა გავითვალისწინოთ." },
-      { level: "medium", q: "რომელი სერვისი აგზავნის HTTP მოთხოვნას Angular-ში?" },
+      { level: "medium", q: "როგორ იღებს მონაცემს თანამედროვე Angular?" },
     ],
-    answers: ["იტვირთება, შეცდომა, მონაცემი.", "HttpClient (inject(HttpClient))."],
+    answers: ["იტვირთება, შეცდომა, მონაცემი.", "httpResource(() => url) — შედეგი სიგნალებია: value(), isLoading(), error(); რეგისტრაცია provideHttpClient()."],
   },
   "ng-cli": {
     tasks: [
