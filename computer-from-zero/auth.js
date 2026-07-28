@@ -11,6 +11,7 @@
 
   const SESSION_KEY = "cfz:session";
   const PROGRESS_PREFIX = "computer-from-zero:completed:";
+  const ASSIGN_PREFIX = "computer-from-zero:assignments:";
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -57,14 +58,35 @@
     window.location.reload();
   }
 
-  function progressCount(id) {
+  function countAt(key) {
     try {
-      const raw = localStorage.getItem(PROGRESS_PREFIX + id);
+      const raw = localStorage.getItem(key);
       const arr = raw ? JSON.parse(raw) : [];
       return Array.isArray(arr) ? arr.length : 0;
     } catch (e) {
       return 0;
     }
+  }
+  function progressCount(id) {
+    return countAt(PROGRESS_PREFIX + id);
+  }
+  function assignmentCount(id) {
+    return countAt(ASSIGN_PREFIX + id);
+  }
+  // ყველა თავის გაკვეთილების საერთო რაოდენობა.
+  function totalLessons() {
+    const chapters = [
+      window.ComputerFromZeroLessons,
+      window.HtmlLessons,
+      window.CssLessons,
+      window.JsLessons,
+      window.TsLessons,
+      window.NodeLessons,
+      window.AngularLessons,
+    ];
+    return chapters.reduce(function (sum, list) {
+      return sum + ((list && list.length) || 0);
+    }, 0);
   }
 
   window.CFZAuth = {
@@ -182,8 +204,23 @@
   }
 
   // ---------- ლექტორის დაფა ----------
+  function bar(label, done, total) {
+    const percent = total ? Math.round((done / total) * 100) : 0;
+    const track = el("div", "dash-track");
+    const fill = el("div", "dash-fill");
+    fill.style.width = percent + "%";
+    track.append(fill);
+    const line = el("div", "dash-metric");
+    line.append(
+      el("span", "dash-metric-label", label),
+      track,
+      el("span", "dash-count", done + " / " + total)
+    );
+    return line;
+  }
+
   function openDashboard() {
-    const total = (window.ComputerFromZeroLessons || []).length || 15;
+    const total = totalLessons() || 15;
     const overlay = el("div", "dash-overlay");
     const panel = el("div", "dash-panel");
     panel.append(el("h2", null, "სტუდენტების პროგრესი"));
@@ -192,18 +229,12 @@
       if (USERS[id].role !== "student") {
         return;
       }
-      const done = progressCount(id);
-      const percent = total ? Math.round((done / total) * 100) : 0;
+      const lessons = progressCount(id);
+      const assignments = assignmentCount(id);
       const row = el("div", "dash-row");
-      const track = el("div", "dash-track");
-      const fill = el("div", "dash-fill");
-      fill.style.width = percent + "%";
-      track.append(fill);
-      row.append(
-        el("span", "dash-name", USERS[id].name),
-        track,
-        el("span", "dash-count", done + " / " + total)
-      );
+      row.append(el("span", "dash-name", USERS[id].name));
+      row.append(bar("გაკვეთილები", lessons, total));
+      row.append(bar("დავალებები", assignments, total));
       panel.append(row);
     });
 

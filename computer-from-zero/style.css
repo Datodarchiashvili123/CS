@@ -231,13 +231,27 @@ body:not([data-authed]) .app-shell {
 
 .dash-row {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
 }
+.dash-row:last-of-type { border-bottom: none; }
 
 .dash-name {
   font-weight: 800;
+  font-size: 1.02rem;
+}
+
+.dash-metric {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+.dash-metric-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .dash-track {
@@ -2811,4 +2825,50 @@ body:not([data-authed]) .app-main {
 }
 .js-playground {
   position: relative;
+}
+
+/* ==================== დასრულების ბარი (გაკვეთილი / დავალება) ==================== */
+.done-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.done-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.done-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  color: var(--muted);
+  font-weight: 900;
+  font-size: 0.95rem;
+  flex: none;
+}
+.done-text {
+  font-weight: 700;
+  color: var(--muted);
+}
+.done-bar.is-done {
+  border-color: var(--success);
+  background: var(--electron-soft);
+}
+.done-bar.is-done .done-icon {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+.done-bar.is-done .done-text {
+  color: var(--success);
+}
+.done-bar .primary-button,
+.done-bar .secondary-button {
+  flex: none;
 }

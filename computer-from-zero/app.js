@@ -23,8 +23,9 @@
     window.CFZAuth && typeof window.CFZAuth.current === "function"
       ? window.CFZAuth.current()
       : null;
-  const STORAGE_KEY =
-    "computer-from-zero:completed:" + (authUser ? authUser.id : "guest");
+  const USER_ID = authUser ? authUser.id : "guest";
+  const STORAGE_KEY = "computer-from-zero:completed:" + USER_ID;
+  const ASSIGN_KEY = "computer-from-zero:assignments:" + USER_ID;
 
   // თავები — თავი 1 = კომპიუტერი ნულიდან (არსებული კურსი), დანარჩენი მალე.
   const CHAPTERS = [
@@ -46,7 +47,8 @@
 
   let cleanupCurrentLesson = null;
   let refreshSidebar = null;
-  const completedLessons = loadProgress();
+  const completedLessons = loadSet(STORAGE_KEY);
+  const completedAssignments = loadSet(ASSIGN_KEY);
 
   window.CFZ = {
     el,
@@ -1898,10 +1900,11 @@ var __filename = "/app/index.js";
       const item = el("li", { className: "chapter-item" }, [head]);
 
       const chLessons = lessonsFor(ch.id);
+      const doneSet = mode === "assignments" ? completedAssignments : completedLessons;
       if (isActive && ch.available && chLessons.length) {
         const sub = el("ul", { className: "lesson-sublist" });
         chLessons.forEach(function (lesson, li) {
-          const done = completedLessons.has(lesson.id);
+          const done = doneSet.has(lesson.id);
           const btn = el("button", {
             className:
               "lesson-subitem" +
@@ -1926,36 +1929,43 @@ var __filename = "/app/index.js";
     });
 
     const aside = el("aside", { className: "chapter-sidebar", attrs: { "aria-label": "თავები" } });
-    if (mode === "course" && lessonsFor(activeChapter).length) {
-      aside.append(renderProgressSummary(activeChapter));
+    if (lessonsFor(activeChapter).length) {
+      aside.append(renderProgressSummary(activeChapter, mode));
     }
     aside.append(list);
     return aside;
   }
 
-  function renderProgressSummary(chapterId) {
+  function renderProgressSummary(chapterId, mode) {
     const chLessons = lessonsFor(chapterId);
+    const set = mode === "assignments" ? completedAssignments : completedLessons;
     const total = chLessons.length;
     const done = chLessons.filter(function (l) {
-      return completedLessons.has(l.id);
+      return set.has(l.id);
     }).length;
     const percent = total ? Math.round((done / total) * 100) : 0;
     const fill = el("div", { className: "progress-fill" });
     fill.style.width = percent + "%";
+    const caption = mode === "assignments" ? " დავალება შესრულებული" : " გაკვეთილი დასრულებული";
     return el("div", { className: "progress-summary" }, [
       el("div", {
         className: "progress-track",
         attrs: { role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(percent), "aria-label": "პროგრესი" },
       }, [fill]),
-      el("p", { className: "progress-caption", text: done + " / " + total + " დასრულებული" }),
+      el("p", { className: "progress-caption", text: done + " / " + total + caption }),
       el("button", {
         className: "progress-reset",
         attrs: { type: "button" },
         text: "პროგრესის განულება",
         on: {
           click: function () {
-            completedLessons.clear();
-            saveProgress();
+            if (mode === "assignments") {
+              chLessons.forEach(function (l) { completedAssignments.delete(l.id); });
+              saveAssignments();
+            } else {
+              chLessons.forEach(function (l) { completedLessons.delete(l.id); });
+              saveProgress();
+            }
             if (refreshSidebar) refreshSidebar();
           },
         },
@@ -2108,15 +2118,50 @@ var __filename = "/app/index.js";
     return el("section", { className: "section-band" }, children);
   }
 
+  // დასრულების ბარი — ცხადი გადამრთველი გაკვეთილზეც და დავალებაზეც.
+  function buildDoneBar(opts) {
+    const status = el("div", { className: "done-status" }, [
+      el("span", { className: "done-icon" }, []),
+      el("span", { className: "done-text" }, []),
+    ]);
+    const button = createButton("", "primary", function () {
+      const now = opts.onToggle();
+      paint(now);
+    });
+    const bar = el("section", { className: "section-band done-bar" }, [status, button]);
+
+    function paint(done) {
+      bar.classList.toggle("is-done", done);
+      status.querySelector(".done-icon").textContent = done ? "✓" : "○";
+      status.querySelector(".done-text").textContent = done ? opts.doneText : opts.pendingText;
+      button.textContent = done ? opts.unmarkLabel : opts.markLabel;
+      button.className = done ? "secondary-button" : "primary-button";
+    }
+    paint(Boolean(opts.initial));
+    return { element: bar, setDone: paint };
+  }
+
   function renderLessonPanel(lesson, index, chLessons, chapterId) {
     const simulationHost = el("div", { className: "sim-card" }, []);
     const challengeStatus = el("p", { className: "challenge-status", text: "დავალება ჯერ შესასრულებელია." }, []);
+
+    const doneBar = buildDoneBar({
+      initial: completedLessons.has(lesson.id),
+      doneText: "გაკვეთილი დასრულებულია",
+      pendingText: "ჯერ არ დაგისრულებია ეს გაკვეთილი",
+      markLabel: "✓ მონიშნე შესრულებულად",
+      unmarkLabel: "მოხსენი მონიშვნა",
+      onToggle: function () {
+        return toggleLessonDone(lesson.id);
+      },
+    });
 
     const setChallengeResult = function (isDone, message) {
       challengeStatus.classList.toggle("is-done", Boolean(isDone));
       challengeStatus.textContent = message;
       if (isDone) {
         markLessonComplete(lesson.id);
+        doneBar.setDone(true);
       }
     };
 
@@ -2154,6 +2199,8 @@ var __filename = "/app/index.js";
 
     const extras = buildExtras(lesson);
     if (extras) panelChildren.push(extras);
+
+    panelChildren.push(doneBar.element);
 
     panelChildren.push(
       el("nav", { className: "lesson-actions", attrs: { "aria-label": "გაკვეთილების მართვა" } }, [
@@ -2223,6 +2270,18 @@ var __filename = "/app/index.js";
         ])
       );
     }
+
+    const doneBar = buildDoneBar({
+      initial: completedAssignments.has(lesson.id),
+      doneText: "დავალება შესრულებულია",
+      pendingText: "ჯერ არ შეგისრულებია ეს დავალება",
+      markLabel: "✓ დავალება შევასრულე",
+      unmarkLabel: "მოხსენი მონიშვნა",
+      onToggle: function () {
+        return toggleAssignmentDone(lesson.id);
+      },
+    });
+    panel.append(doneBar.element);
 
     panel.append(
       el("nav", { className: "lesson-actions" }, [
@@ -2316,9 +2375,9 @@ var __filename = "/app/index.js";
 
   // ==================== პროგრესი ====================
 
-  function loadProgress() {
+  function loadSet(key) {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.localStorage.getItem(key);
       if (!raw) return new Set();
       const parsed = JSON.parse(raw);
       return new Set(Array.isArray(parsed) ? parsed : []);
@@ -2327,12 +2386,19 @@ var __filename = "/app/index.js";
     }
   }
 
-  function saveProgress() {
+  function saveSet(key, set) {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(completedLessons)));
+      window.localStorage.setItem(key, JSON.stringify(Array.from(set)));
     } catch (error) {
       /* storage unavailable */
     }
+  }
+
+  function saveProgress() {
+    saveSet(STORAGE_KEY, completedLessons);
+  }
+  function saveAssignments() {
+    saveSet(ASSIGN_KEY, completedAssignments);
   }
 
   function markLessonComplete(id) {
@@ -2340,6 +2406,22 @@ var __filename = "/app/index.js";
     completedLessons.add(id);
     saveProgress();
     if (refreshSidebar) refreshSidebar();
+  }
+
+  // ცხადი გადამრთველი გაკვეთილისთვის/დავალებისთვის — აბრუნებს ახალ მდგომარეობას (true/false).
+  function toggleLessonDone(id) {
+    if (completedLessons.has(id)) completedLessons.delete(id);
+    else completedLessons.add(id);
+    saveProgress();
+    if (refreshSidebar) refreshSidebar();
+    return completedLessons.has(id);
+  }
+  function toggleAssignmentDone(id) {
+    if (completedAssignments.has(id)) completedAssignments.delete(id);
+    else completedAssignments.add(id);
+    saveAssignments();
+    if (refreshSidebar) refreshSidebar();
+    return completedAssignments.has(id);
   }
 
   // ==================== bootstrap ====================
