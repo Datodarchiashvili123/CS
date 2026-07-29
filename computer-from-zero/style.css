@@ -2823,6 +2823,31 @@ body:not([data-authed]) .app-main {
   border: 0;
   pointer-events: none;
 }
+
+/* ==================== SCSS თავი: SCSS → CSS პლეიგრაუნდი ==================== */
+.playground-scss {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+.scss-output {
+  margin: 0;
+  min-height: 200px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0f141c;
+  color: #d6c8f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  tab-size: 2;
+}
+.scss-output.has-error {
+  color: #ffb4b4;
+  background: #2a1416;
+}
 .js-playground {
   position: relative;
 }

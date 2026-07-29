@@ -21,7 +21,10 @@
             <a href="#services">სერვისები</a>
             <a href="#contact">ჩემ შესახებ</a>
         </nav>
-        <a href="#contact" class="btn btn-black">დაჯავშნე გადაღება</a>
+        <div class="header-actions">
+            <button type="button" class="theme-toggle" id="themeToggle" aria-label="ბნელი რეჟიმის გადართვა" title="ბნელი/ნათელი რეჟიმი">🌙</button>
+            <a href="#contact" class="btn btn-black">დაჯავშნე გადაღება</a>
+        </div>
     </div>
 </header>
 
@@ -198,6 +201,35 @@
         </div>
     </div>
 </footer>
+
+<script>
+    (function () {
+        var root = document.documentElement;
+        var btn = document.getElementById("themeToggle");
+        var KEY = "portfolio-theme";
+
+        function apply(theme) {
+            if (theme === "dark") {
+                root.setAttribute("data-theme", "dark");
+                btn.textContent = "☀️";
+            } else {
+                root.removeAttribute("data-theme");
+                btn.textContent = "🌙";
+            }
+        }
+
+        var saved = null;
+        try { saved = localStorage.getItem(KEY); } catch (e) {}
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        apply(saved || (prefersDark ? "dark" : "light"));
+
+        btn.addEventListener("click", function () {
+            var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            apply(next);
+            try { localStorage.setItem(KEY, next); } catch (e) {}
+        });
+    })();
+</script>
 
 </body>
 </html>

@@ -79,6 +79,7 @@
       window.ComputerFromZeroLessons,
       window.HtmlLessons,
       window.CssLessons,
+      window.ScssLessons,
       window.JsLessons,
       window.TsLessons,
       window.NodeLessons,
