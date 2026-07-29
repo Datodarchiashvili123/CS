@@ -1,6 +1,180 @@
 // დავალებები თითო გაკვეთილზე (თავი 1 — კომპიუტერი ნულიდან, თავი 2 — HTML).
 // level: easy 🟢 · medium 🟡 · hard 🔴
 window.CFZExercises = {
+  // ===================== SCSS =====================
+  "scss-intro": {
+    tasks: [
+      { level: "easy", q: "რატომ ვერ კითხულობს ბრაუზერი .scss ფაილს პირდაპირ?" },
+      { level: "easy", q: "რას ნიშნავს, რომ SCSS არის CSS-ის „ზედნაშენი“ (superset)?" },
+      { level: "medium", q: "დაასახელე სამი რამ, რაც SCSS-ს აქვს და სუფთა CSS-ს არა." },
+    ],
+    answers: [
+      "ბრაუზერს მხოლოდ CSS ესმის — SCSS ჯერ უნდა დაკომპილირდეს CSS-ად.",
+      "ნებისმიერი ვალიდური CSS ასევე ვალიდური SCSS-ია; SCSS მხოლოდ ამატებს შესაძლებლობებს.",
+      "ცვლადები, ჩალაგება, mixin-ები/ფუნქციები, ციკლები, პარციალები (ნებისმიერი სამი).",
+    ],
+  },
+  "scss-variables": {
+    tasks: [
+      { level: "easy", q: "რა სიმბოლოთი იწყება SCSS-ის ცვლადი და როგორ ვქმნით $primary-ს #333 მნიშვნელობით?" },
+      { level: "medium", q: "რა უპირატესობა აქვს ცვლადებში ბრენდის ფერების შენახვას?" },
+    ],
+    answers: [
+      "$ სიმბოლოთი: $primary: #333;",
+      "ერთ ადგილას ცვლი მნიშვნელობას და ის ავტომატურად ყველგან განახლდება — რედიზაინი მარტივდება.",
+    ],
+  },
+  "scss-nesting": {
+    tasks: [
+      { level: "easy", q: "რად კომპილირდება .card { .title { color: red; } }?" },
+      { level: "medium", q: "რატომ არის ცუდი ღრმა (4+ დონე) ჩალაგება?" },
+    ],
+    answers: [
+      ".card .title { color: red; }",
+      "ბადებს ძალიან „ძლიერ“ (მაღალი specificity) სელექტორებს, რომელთა გადაფარვა/მხარდაჭერა ძნელდება.",
+    ],
+  },
+  "scss-parent": {
+    tasks: [
+      { level: "easy", q: "რას ნიშნავს & და რად იქცევა .btn { &:hover { } }?" },
+      { level: "medium", q: "დაწერე &--primary და ახსენი, რად კომპილირდება .btn-ის შიგნით." },
+    ],
+    answers: [
+      "& = მშობელი სელექტორი; .btn { &:hover {} } → .btn:hover (გაწებება ხარვეზის გარეშე).",
+      "&--primary → .btn--primary (BEM მოდიფიკატორი).",
+    ],
+  },
+  "scss-nested-props": {
+    tasks: [
+      { level: "easy", q: "რად კომპილირდება font: { family: serif; size: 20px; }?" },
+      { level: "medium", q: "დაწერე ჩალაგებული border: { … } 2px მყარი შავი კიდისთვის." },
+    ],
+    answers: [
+      "font-family: serif; font-size: 20px;",
+      "border: { width: 2px; style: solid; color: black; }",
+    ],
+  },
+  "scss-mixin": {
+    tasks: [
+      { level: "easy", q: "რითი განსხვავდება @mixin ცვლადისგან?" },
+      { level: "medium", q: "დაწერე @mixin center flex-ცენტრირებით და დაურთე .box-ს." },
+    ],
+    answers: [
+      "ცვლადი ერთ მნიშვნელობას ინახავს; mixin — მთელ სტილის ბლოკს (რამდენიმე თვისებას).",
+      "@mixin center { display: flex; justify-content: center; align-items: center; } .box { @include center; }",
+    ],
+  },
+  "scss-mixin-args": {
+    tasks: [
+      { level: "easy", q: "როგორ მივცემთ mixin-ს არგუმენტს default მნიშვნელობით?" },
+      { level: "medium", q: "@mixin badge($bg, $fg: white)-ისთვის რას ნიშნავს @include badge(red)?" },
+    ],
+    answers: [
+      "@mixin pad($x: 8px) { padding: $x; } — $x-ს default 8px აქვს.",
+      "$bg = red, $fg კი default-ით რჩება white (მეორე არგუმენტი აღარ არის საჭირო).",
+    ],
+  },
+  "scss-content": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს @content mixin-ის შიგნით?" },
+      { level: "medium", q: "დაწერე @mixin phone media query-სთვის, რომელიც @content-ს იყენებს." },
+    ],
+    answers: [
+      "ათავსებს იმ სტილს, რომელსაც @include-ისას ფიგურულ ფრჩხილებში გადასცემ.",
+      "@mixin phone { @media (max-width: 600px) { @content; } }",
+    ],
+  },
+  "scss-function": {
+    tasks: [
+      { level: "easy", q: "რითი განსხვავდება @function @mixin-სგან?" },
+      { level: "medium", q: "დაწერე @function double, რომელიც აბრუნებს არგუმენტის გაორმაგებას." },
+    ],
+    answers: [
+      "ფუნქცია მნიშვნელობას აბრუნებს (@return); mixin — სტილის ბლოკს.",
+      "@function double($n) { @return $n * 2; }",
+    ],
+  },
+  "scss-math": {
+    tasks: [
+      { level: "easy", q: "რას აბრუნებს 10px * 2 SCSS-ში?" },
+      { level: "medium", q: "რატომ ვიყენებთ math.div-ს უბრალო / -ის ნაცვლად თანამედროვე Sass-ში?" },
+    ],
+    answers: [
+      "20px (ერთეული ინახება).",
+      "ძველ Sass-ში / ორმაგ როლს თამაშობდა (გაყოფა და font: 16px/1.5 მალამბი); math.div ცალსახა, თანამედროვე გზაა.",
+    ],
+  },
+  "scss-color-fns": {
+    tasks: [
+      { level: "easy", q: "რას აკეთებს darken($c, 10%) და rgba($c, 0.5)?" },
+      { level: "medium", q: "როგორ ავაგოთ hover-ის ფერი ბაზისური $brand-იდან?" },
+    ],
+    answers: [
+      "darken აბნელებს ფერს 10%-ით; rgba ამატებს გამჭვირვალობას (alpha 0.5).",
+      "background: $brand; &:hover { background: darken($brand, 10%); }",
+    ],
+  },
+  "scss-interpolation": {
+    tasks: [
+      { level: "easy", q: "როდის გვჭირდება #{} და არა უბრალო ცვლადი?" },
+      { level: "medium", q: "დაწერე margin თვისება, სადაც მხარეს ცვლადი $side განსაზღვრავს." },
+    ],
+    answers: [
+      "როცა ცვლადს სელექტორის ან თვისების *სახელში* ვსვამთ (იქ პირდაპირ ცვლადი არ მუშაობს).",
+      "margin-#{$side}: 20px;",
+    ],
+  },
+  "scss-if": {
+    tasks: [
+      { level: "easy", q: "როგორ მუშაობს @if / @else?" },
+      { level: "medium", q: "დაწერე @if, რომელიც $dark == true-ზე მუქ ფონს აძლევს, else — ღიას." },
+    ],
+    answers: [
+      "@if პირობის ჭეშმარიტებისას გამოსცემს სტილს; @else — საწინააღმდეგო შემთხვევაში.",
+      "@if $dark { background: black; } @else { background: white; }",
+    ],
+  },
+  "scss-each": {
+    tasks: [
+      { level: "easy", q: "რას ატარებს @each სიაზე?" },
+      { level: "medium", q: "დაწერე @each, რომელიც (red, blue)-დან .text-red / .text-blue-ს აგენერირებს." },
+    ],
+    answers: [
+      "სიის (ან რუკის) თითოეულ ელემენტს, თითოზე ერთსა და იმავე წესს იმეორებს.",
+      "@each $c in red, blue { .text-#{$c} { color: $c; } }",
+    ],
+  },
+  "scss-for": {
+    tasks: [
+      { level: "easy", q: "რა განსხვავებაა @for-ში through-სა და to-ს შორის?" },
+      { level: "medium", q: "დაწერე @for, რომელიც .p-1 .. .p-3-ს padding-ით $i * 8px აგენერირებს." },
+    ],
+    answers: [
+      "through ითვლის ბოლო რიცხვის ჩათვლით (1..N); to — ჩაუთვლელად (1..N-1).",
+      "@for $i from 1 through 3 { .p-#{$i} { padding: $i * 8px; } }",
+    ],
+  },
+  "scss-extend": {
+    tasks: [
+      { level: "easy", q: "რა არის %placeholder და რატომ არ იბეჭდება ცალკე?" },
+      { level: "medium", q: "როდის ვამჯობინოთ @extend @mixin-ს?" },
+    ],
+    answers: [
+      "„ჩონჩხი“ სელექტორი, რომელიც მარტო არ გამოდის CSS-ში, მაგრამ @extend-ით ერთვება სხვებში.",
+      "როცა არგუმენტები არ გვჭირდება და უბრალო გაზიარება გვინდა — @extend ნაკლებ CSS-ს ბადებს (სელექტორებს აჯგუფებს).",
+    ],
+  },
+  "scss-recap": {
+    tasks: [
+      { level: "easy", q: "რა არის პარციალი და როგორ ვაერთებთ თანამედროვე Sass-ში?" },
+      { level: "hard", q: "ააგე ღილაკის კომპონენტი: $brand ცვლადი, @mixin button, ჩალაგებული &:hover." },
+    ],
+    answers: [
+      "ქვედა ხაზით დაწყებული ფაილი (_buttons.scss); აერთებ @use \"buttons\";-ით (ან ძველი @import-ით).",
+      "$brand: #16a34a; @mixin button($bg) { padding: 12px 24px; color: white; background: $bg; &:hover { background: darken($bg, 10%); } } .cta { @include button($brand); }",
+    ],
+  },
+
   // ===================== თავი 2 — HTML =====================
   "html-intro": {
     tasks: [

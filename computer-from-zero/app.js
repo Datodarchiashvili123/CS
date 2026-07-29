@@ -10,6 +10,7 @@
     cfz: window.ComputerFromZeroLessons || [],
     html: window.HtmlLessons || [],
     css: window.CssLessons || [],
+    scss: window.ScssLessons || [],
     js: window.JsLessons || [],
     ts: window.TsLessons || [],
     node: window.NodeLessons || [],
@@ -32,6 +33,7 @@
     { id: "cfz", title: "კომპიუტერი ნულიდან", available: true },
     { id: "html", title: "HTML", available: true },
     { id: "css", title: "CSS", available: true },
+    { id: "scss", title: "SCSS", available: true },
     { id: "js", title: "JavaScript", available: true },
     { id: "ts", title: "TypeScript", available: true },
     { id: "node", title: "Node.js", available: true },
@@ -65,6 +67,7 @@
     schematicGate,
     createCodePlayground,
     createStylePlayground,
+    createScssPlayground,
     createJsPlayground,
     createTsPlayground,
     createNodePlayground,
@@ -451,6 +454,795 @@
 
   // CSS პლეიგრაუნდი: მარკაპი + ცოცხალი სტილი. onCheck(doc, win, cssText)
   // გამოთვლილ სტილზე მუშაობს, ამიტომ ამოწმებს, მართლა გამოიყენა თუ არა წესი.
+  // ===== ჩაშენებული მინი-SCSS→CSS კომპილატორი (სასწავლო) =====
+  const compileScss = (function () {
+    "use strict";
+
+
+  // ---------- მნიშვნელობის ტიპები ----------
+  function num(v, u) { return { t: "num", v: v, u: u || "" }; }
+  function str(v, q) { return { t: "str", v: v, q: q || "" }; }
+  function color(r, g, b, a, src) { return { t: "color", r: clamp(r), g: clamp(g), b: clamp(b), a: a === undefined ? 1 : a, src: src || null }; }
+  function list(items, sep) { return { t: "list", items: items, sep: sep || " " }; }
+  function map(pairs) { return { t: "map", pairs: pairs }; }
+  function ident(v) { return { t: "ident", v: v }; }
+  function clamp(n) { return Math.max(0, Math.min(255, Math.round(n))); }
+
+  // ---------- comment strip ----------
+  function stripComments(src) {
+    var out = "";
+    for (var i = 0; i < src.length; i++) {
+      var c = src[i];
+      if (c === '"' || c === "'") {
+        var q = c; out += c; i++;
+        while (i < src.length && src[i] !== q) { out += src[i]; i++; }
+        out += src[i] || ""; continue;
+      }
+      if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; out += "\n"; continue; }
+      if (c === "/" && src[i + 1] === "*") { i += 2; while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i++; i++; continue; }
+      out += c;
+    }
+    return out;
+  }
+
+  // ---------- statement splitter (nested blocks) ----------
+  // აბრუნებს სტეიტმენტების მასივს: {kind:'block', head, body} ან {kind:'stmt', text}
+  function parseStatements(src) {
+    var stmts = [];
+    var i = 0, buf = "", depth = 0, str = null;
+    while (i < src.length) {
+      var c = src[i];
+      if (str) { buf += c; if (c === str && src[i - 1] !== "\\") str = null; i++; continue; }
+      if (c === '"' || c === "'") { str = c; buf += c; i++; continue; }
+      if (c === "#" && src[i + 1] === "{") {
+        // interpolation — ჩავყლაპოთ, რომ { არ ჩაითვალოს ბლოკად
+        buf += "#{"; i += 2; var d = 1;
+        while (i < src.length && d > 0) { if (src[i] === "{") d++; else if (src[i] === "}") d--; if (d > 0) buf += src[i]; i++; }
+        buf += "}"; continue;
+      }
+      if (c === "{") {
+        var head = buf.trim(); buf = ""; i++;
+        var d2 = 1, body = "", s2 = null;
+        while (i < src.length && d2 > 0) {
+          var cc = src[i];
+          if (s2) { body += cc; if (cc === s2 && src[i - 1] !== "\\") s2 = null; i++; continue; }
+          if (cc === '"' || cc === "'") { s2 = cc; body += cc; i++; continue; }
+          if (cc === "#" && src[i + 1] === "{") { body += "#{"; i += 2; var d3 = 1; while (i < src.length && d3 > 0) { if (src[i] === "{") d3++; else if (src[i] === "}") d3--; if (d3 > 0) body += src[i]; i++; } body += "}"; continue; }
+          if (cc === "{") d2++;
+          else if (cc === "}") { d2--; if (d2 === 0) { i++; break; } }
+          body += cc; i++;
+        }
+        stmts.push({ kind: "block", head: head, body: body });
+        continue;
+      }
+      if (c === ";") { if (buf.trim()) stmts.push({ kind: "stmt", text: buf.trim() }); buf = ""; i++; continue; }
+      buf += c; i++;
+    }
+    if (buf.trim()) stmts.push({ kind: "stmt", text: buf.trim() });
+    return stmts;
+  }
+
+  // ---------- scope ----------
+  function Scope(parent) { this.vars = {}; this.parent = parent; }
+  Scope.prototype.get = function (name) {
+    if (name in this.vars) return this.vars[name];
+    if (this.parent) return this.parent.get(name);
+    return undefined;
+  };
+  Scope.prototype.has = function (name) {
+    if (name in this.vars) return true;
+    return this.parent ? this.parent.has(name) : false;
+  };
+  Scope.prototype.set = function (name, val) { this.vars[name] = val; };
+  Scope.prototype.setNearest = function (name, val) {
+    var s = this;
+    while (s) { if (name in s.vars) { s.vars[name] = val; return; } s = s.parent; }
+    this.vars[name] = val;
+  };
+
+  // ---------- value formatting ----------
+  function fmt(v) {
+    if (!v || typeof v !== "object") return String(v);
+    switch (v.t) {
+      case "num": {
+        var n = Math.round(v.v * 1000) / 1000;
+        return (Object.is(n, -0) ? 0 : n) + v.u;
+      }
+      case "str": return v.q ? v.q + v.v + v.q : v.v;
+      case "ident": return v.v;
+      case "color": return colorStr(v);
+      case "list": return v.items.map(fmt).join(v.sep === "," ? ", " : " ");
+      case "map": return "(" + v.pairs.map(function (p) { return fmt(p[0]) + ": " + fmt(p[1]); }).join(", ") + ")";
+    }
+    return String(v);
+  }
+  function colorStr(c) {
+    if (c.a < 1) return "rgba(" + c.r + ", " + c.g + ", " + c.b + ", " + (Math.round(c.a * 100) / 100) + ")";
+    if (c.src) return c.src;
+    return "#" + hex(c.r) + hex(c.g) + hex(c.b);
+  }
+  function hex(n) { var s = n.toString(16); return s.length === 1 ? "0" + s : s; }
+
+  // ---------- color parsing ----------
+  var NAMED = { black: [0,0,0], white: [255,255,255], red: [255,0,0], green: [0,128,0], blue: [0,0,255], gray: [128,128,128], grey: [128,128,128] };
+  function parseColorToken(tok) {
+    if (tok[0] === "#") {
+      var h = tok.slice(1);
+      if (h.length === 3) return color(parseInt(h[0]+h[0],16), parseInt(h[1]+h[1],16), parseInt(h[2]+h[2],16), 1, tok);
+      if (h.length === 6) return color(parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16), 1, tok);
+    }
+    return null;
+  }
+
+  // ---------- HSL helpers ----------
+  function rgbToHsl(c) {
+    var r = c.r/255, g = c.g/255, b = c.b/255;
+    var max = Math.max(r,g,b), min = Math.min(r,g,b), h, s, l = (max+min)/2;
+    if (max === min) { h = s = 0; }
+    else {
+      var d = max-min;
+      s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+      if (max === r) h = (g-b)/d + (g < b ? 6 : 0);
+      else if (max === g) h = (b-r)/d + 2;
+      else h = (r-g)/d + 4;
+      h /= 6;
+    }
+    return { h: h*360, s: s*100, l: l*100, a: c.a };
+  }
+  function hslToRgb(h, s, l, a) {
+    h = ((h % 360) + 360) % 360 / 360; s = Math.max(0,Math.min(100,s))/100; l = Math.max(0,Math.min(100,l))/100;
+    var r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      var hue2rgb = function (p, q, t) {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q-p)*6*t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q-p)*(2/3-t)*6;
+        return p;
+      };
+      var q = l < 0.5 ? l*(1+s) : l+s-l*s;
+      var p = 2*l-q;
+      r = hue2rgb(p,q,h+1/3); g = hue2rgb(p,q,h); b = hue2rgb(p,q,h-1/3);
+    }
+    return color(r*255, g*255, b*255, a === undefined ? 1 : a);
+  }
+
+  // ---------- expression evaluator ----------
+  function evalExpr(text, scope, funcs) {
+    var toks = tokenizeExpr(text);
+    var pos = 0;
+    function peek() { return toks[pos]; }
+    function next() { return toks[pos++]; }
+
+    function parseList() {
+      // comma-separated
+      var parts = [parseSpaceList()];
+      while (peek() && peek().type === "op" && peek().v === ",") { next(); parts.push(parseSpaceList()); }
+      if (parts.length === 1) return parts[0];
+      return list(parts, ",");
+    }
+    function parseSpaceList() {
+      var items = [parseAdd()];
+      while (peek() && !(peek().type === "op" && (peek().v === "," || peek().v === ")"))) {
+        // space-separated value list (e.g. 1px solid red)
+        if (peek().type === "op" && "+-*/%<>=!".indexOf(peek().v[0]) !== -1) break;
+        items.push(parseAdd());
+      }
+      if (items.length === 1) return items[0];
+      return list(items, " ");
+    }
+    function parseAdd() {
+      var left = parseMul();
+      while (peek() && peek().type === "op" && (peek().v === "+" || peek().v === "-")) {
+        var op = next().v; var right = parseMul();
+        left = applyMath(op, left, right);
+      }
+      return left;
+    }
+    function parseMul() {
+      var left = parseCmp();
+      while (peek() && peek().type === "op" && (peek().v === "*" || peek().v === "/" || peek().v === "%")) {
+        var op = next().v; var right = parseCmp();
+        left = applyMath(op, left, right);
+      }
+      return left;
+    }
+    function parseCmp() {
+      var left = parseUnary();
+      while (peek() && peek().type === "op" && ["==","!=","<",">","<=",">="].indexOf(peek().v) !== -1) {
+        var op = next().v; var right = parseUnary();
+        left = ident(compare(op, left, right) ? "true" : "false");
+      }
+      // logical
+      while (peek() && peek().type === "word" && (peek().v === "and" || peek().v === "or")) {
+        var lop = next().v; var r2 = parseUnary();
+        var lv = truthy(left), rv = truthy(r2);
+        left = ident((lop === "and" ? (lv && rv) : (lv || rv)) ? "true" : "false");
+      }
+      return left;
+    }
+    function parseUnary() {
+      if (peek() && peek().type === "op" && peek().v === "-") { next(); var v = parsePrimary(); if (v.t === "num") return num(-v.v, v.u); return v; }
+      if (peek() && peek().type === "word" && peek().v === "not") { next(); return ident(truthy(parseUnary()) ? "false" : "true"); }
+      return parsePrimary();
+    }
+    function parsePrimary() {
+      var t = peek();
+      if (!t) return str("");
+      if (t.type === "op" && t.v === "(") {
+        next();
+        // შეიძლება map იყოს: (a: 1, b: 2)
+        var saved = pos;
+        var mp = tryParseMap();
+        if (mp) return mp;
+        pos = saved;
+        var e = parseList();
+        if (peek() && peek().type === "op" && peek().v === ")") next();
+        return e;
+      }
+      if (t.type === "num") { next(); return num(parseFloat(t.v), t.u || ""); }
+      if (t.type === "string") { next(); return str(t.v, t.q); }
+      if (t.type === "var") { next(); var val = scope.get(t.v); return val === undefined ? ident("null") : val; }
+      if (t.type === "hash") { next(); var col = parseColorToken(t.v); return col || ident(t.v); }
+      if (t.type === "interp") { next(); return str(interpolate("#{" + t.v + "}", scope, funcs), ""); }
+      if (t.type === "word") {
+        next();
+        // function call?
+        if (peek() && peek().type === "op" && peek().v === "(") {
+          next();
+          var args = [];
+          if (!(peek() && peek().type === "op" && peek().v === ")")) {
+            args.push(parseSpaceOrValue());
+            while (peek() && peek().type === "op" && peek().v === ",") { next(); args.push(parseSpaceOrValue()); }
+          }
+          if (peek() && peek().type === "op" && peek().v === ")") next();
+          return callFunction(t.v, args, scope, funcs);
+        }
+        if (t.v === "true" || t.v === "false" || t.v === "null") return ident(t.v);
+        return ident(t.v);
+      }
+      next();
+      return ident(t.v || "");
+    }
+    function parseSpaceOrValue() {
+      // ფუნქციის არგუმენტი — შეიძლება იყოს space-list
+      return parseSpaceList();
+    }
+    function tryParseMap() {
+      // უკვე ( -ს შემდეგ ვართ
+      var pairs = [];
+      if (peek() && peek().type === "op" && peek().v === ")") { next(); return map([]); }
+      while (true) {
+        var keyStart = pos;
+        var key = parseAdd();
+        if (!(peek() && peek().type === "op" && peek().v === ":")) { return null; }
+        next();
+        var val = parseSpaceList();
+        pairs.push([key, val]);
+        if (peek() && peek().type === "op" && peek().v === ",") { next(); continue; }
+        if (peek() && peek().type === "op" && peek().v === ")") { next(); break; }
+        return null;
+      }
+      return map(pairs);
+    }
+
+    var result = parseList();
+    return result;
+  }
+
+  function tokenizeExpr(text) {
+    var toks = [], i = 0;
+    while (i < text.length) {
+      var c = text[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (c === "#" && text[i + 1] === "{") { i += 2; var d = 1, b = ""; while (i < text.length && d > 0) { if (text[i] === "{") d++; else if (text[i] === "}") { d--; if (d === 0) break; } b += text[i]; i++; } i++; toks.push({ type: "interp", v: b }); continue; }
+      if (c === "#") { var h = "#"; i++; while (i < text.length && /[0-9a-fA-F]/.test(text[i])) { h += text[i]; i++; } toks.push({ type: "hash", v: h }); continue; }
+      if (c === "$") { var nm = ""; i++; while (i < text.length && /[\w-]/.test(text[i])) { nm += text[i]; i++; } toks.push({ type: "var", v: nm }); continue; }
+      if (c === '"' || c === "'") { var q = c; i++; var sv = ""; while (i < text.length && text[i] !== q) { sv += text[i]; i++; } i++; toks.push({ type: "string", v: sv, q: q }); continue; }
+      if (/[0-9]/.test(c) || (c === "." && /[0-9]/.test(text[i + 1]))) {
+        var nnum = ""; while (i < text.length && /[0-9.]/.test(text[i])) { nnum += text[i]; i++; }
+        var unit = ""; while (i < text.length && /[a-zA-Z%]/.test(text[i])) { unit += text[i]; i++; }
+        toks.push({ type: "num", v: nnum, u: unit }); continue;
+      }
+      if (/[a-zA-Z_-]/.test(c)) { var w = ""; while (i < text.length && /[\w-]/.test(text[i])) { w += text[i]; i++; }
+        // dotted (math.div)
+        if (text[i] === ".") { w += "."; i++; while (i < text.length && /[\w-]/.test(text[i])) { w += text[i]; i++; } }
+        toks.push({ type: "word", v: w }); continue; }
+      // multi-char ops
+      var two = text.substr(i, 2);
+      if (["==","!=","<=",">="].indexOf(two) !== -1) { toks.push({ type: "op", v: two }); i += 2; continue; }
+      toks.push({ type: "op", v: c }); i++;
+    }
+    return toks;
+  }
+
+  function applyMath(op, a, b) {
+    if (a.t === "num" && b.t === "num") {
+      var u = a.u || b.u;
+      if (op === "+") return num(a.v + b.v, u);
+      if (op === "-") return num(a.v - b.v, u);
+      if (op === "*") return num(a.v * b.v, a.u || b.u);
+      if (op === "/") return num(b.v === 0 ? 0 : a.v / b.v, a.u === b.u ? "" : (a.u || b.u));
+      if (op === "%") return num(a.v % b.v, u);
+    }
+    if (op === "+" && (a.t === "str" || b.t === "str" || a.t === "ident" || b.t === "ident")) {
+      return str(plain(a) + plain(b), a.q || "");
+    }
+    if (op === "/") return str(plain(a) + "/" + plain(b), "");
+    if (op === "-") return str(plain(a) + "-" + plain(b), "");
+    return str(plain(a) + plain(b), "");
+  }
+  function plain(v) { return v.t === "str" ? v.v : (v.t === "color" ? colorStr(v) : fmt(v)); }
+
+  function compare(op, a, b) {
+    var an = a.t === "num" ? a.v : parseFloat(a.v);
+    var bn = b.t === "num" ? b.v : parseFloat(b.v);
+    if (op === "==") return fmt(a) === fmt(b);
+    if (op === "!=") return fmt(a) !== fmt(b);
+    if (op === "<") return an < bn;
+    if (op === ">") return an > bn;
+    if (op === "<=") return an <= bn;
+    if (op === ">=") return an >= bn;
+    return false;
+  }
+  function truthy(v) {
+    if (!v) return false;
+    if (v.t === "ident") return v.v !== "false" && v.v !== "null";
+    if (v.t === "num") return v.v !== 0;
+    if (v.t === "str") return v.v !== "";
+    return true;
+  }
+
+  // ---------- built-in functions ----------
+  function callFunction(name, args, scope, funcs) {
+    var lname = name.toLowerCase();
+    if (funcs.user[name]) return callUserFunction(funcs.user[name], args, scope, funcs);
+    switch (lname) {
+      case "rgb": return color(nv(args[0]), nv(args[1]), nv(args[2]));
+      case "rgba": {
+        if (args.length === 2) { var c = toColor(args[0]); return color(c.r, c.g, c.b, nv(args[1])); }
+        return color(nv(args[0]), nv(args[1]), nv(args[2]), nv(args[3]));
+      }
+      case "hsl": return hslToRgb(nv(args[0]), nv(args[1]), nv(args[2]));
+      case "hsla": return hslToRgb(nv(args[0]), nv(args[1]), nv(args[2]), nv(args[3]));
+      case "lighten": { var h1 = rgbToHsl(toColor(args[0])); return hslToRgb(h1.h, h1.s, h1.l + nv(args[1]), h1.a); }
+      case "darken": { var h2 = rgbToHsl(toColor(args[0])); return hslToRgb(h2.h, h2.s, h2.l - nv(args[1]), h2.a); }
+      case "saturate": { var h3 = rgbToHsl(toColor(args[0])); return hslToRgb(h3.h, h3.s + nv(args[1]), h3.l, h3.a); }
+      case "desaturate": { var h4 = rgbToHsl(toColor(args[0])); return hslToRgb(h4.h, h4.s - nv(args[1]), h4.l, h4.a); }
+      case "adjust-hue": { var h5 = rgbToHsl(toColor(args[0])); return hslToRgb(h5.h + nv(args[1]), h5.s, h5.l, h5.a); }
+      case "mix": {
+        var c1 = toColor(args[0]), c2 = toColor(args[1]), w = args[2] ? nv(args[2]) / 100 : 0.5;
+        return color(c1.r*w + c2.r*(1-w), c1.g*w + c2.g*(1-w), c1.b*w + c2.b*(1-w), (c1.a||1)*w + (c2.a||1)*(1-w));
+      }
+      case "rgba-a":
+      case "opacity": return num(args[0].a === undefined ? 1 : args[0].a);
+      case "percentage": return num(nv(args[0]) * 100, "%");
+      case "round": return num(Math.round(nv(args[0])), args[0].u);
+      case "floor": return num(Math.floor(nv(args[0])), args[0].u);
+      case "ceil": return num(Math.ceil(nv(args[0])), args[0].u);
+      case "abs": return num(Math.abs(nv(args[0])), args[0].u);
+      case "min": return num(Math.min.apply(null, args.map(nv)), args[0].u);
+      case "max": return num(Math.max.apply(null, args.map(nv)), args[0].u);
+      case "math.div": return num(nv(args[1]) === 0 ? 0 : nv(args[0]) / nv(args[1]), args[0].u === args[1].u ? "" : args[0].u);
+      case "math.round": return num(Math.round(nv(args[0])), args[0].u);
+      case "math.ceil": return num(Math.ceil(nv(args[0])), args[0].u);
+      case "math.floor": return num(Math.floor(nv(args[0])), args[0].u);
+      case "map-get": case "map.get": return mapGet(args[0], args[1]);
+      case "map-has-key": case "map.has-key": return ident(mapGet(args[0], args[1]).t !== "ident" || mapGet(args[0], args[1]).v !== "null" ? "true" : "false");
+      case "length": case "list.length": return num(args[0].t === "list" ? args[0].items.length : (args[0].t === "map" ? args[0].pairs.length : 1));
+      case "nth": case "list.nth": { var l = args[0]; var idx = nv(args[1]) - 1; return l.t === "list" ? l.items[idx] : l; }
+      case "to-upper-case": case "string.to-upper-case": return str(plain(args[0]).toUpperCase(), args[0].q);
+      case "to-lower-case": case "string.to-lower-case": return str(plain(args[0]).toLowerCase(), args[0].q);
+      case "str-length": case "string.length": return num(plain(args[0]).length);
+      case "quote": return str(plain(args[0]), '"');
+      case "unquote": return str(plain(args[0]), "");
+      case "if": return truthy(args[0]) ? args[1] : args[2];
+      case "type-of": return str(args[0].t, "");
+      case "calc": return str("calc(" + args.map(function(a){return plain(a);}).join(", ") + ")", "");
+      default:
+        // უცნობი ფუნქცია — დავტოვოთ როგორც CSS ფუნქცია
+        return str(name + "(" + args.map(function (a) { return plain(a); }).join(", ") + ")", "");
+    }
+  }
+  function nv(v) { return v && v.t === "num" ? v.v : parseFloat(v && v.v) || 0; }
+  function toColor(v) {
+    if (!v) return color(0,0,0);
+    if (v.t === "color") return v;
+    if (v.t === "ident") { var n = NAMED[v.v.toLowerCase()]; if (n) return color(n[0],n[1],n[2]); if (v.v[0] === "#") { var c = parseColorToken(v.v); if (c) return c; } }
+    if (v.t === "str" && v.v[0] === "#") { var c2 = parseColorToken(v.v); if (c2) return c2; }
+    return color(0,0,0);
+  }
+  function mapGet(m, key) {
+    if (m.t !== "map") return ident("null");
+    var k = fmt(key);
+    for (var i = 0; i < m.pairs.length; i++) { if (fmt(m.pairs[i][0]) === k) return m.pairs[i][1]; }
+    return ident("null");
+  }
+  function callUserFunction(fn, args, scope, funcs) {
+    var local = new Scope(scope);
+    bindArgs(fn.params, args, local, scope, funcs);
+    var ret = ident("null");
+    execStatements(parseStatements(fn.body), local, { css: [], funcs: funcs, retBox: function (v) { ret = v; } }, true);
+    return ret;
+  }
+
+  function bindArgs(params, args, local, callerScope, funcs) {
+    params.forEach(function (p, i) {
+      if (i < args.length && args[i] !== undefined) local.set(p.name, args[i]);
+      else if (p.def !== null) local.set(p.name, evalExpr(p.def, callerScope, funcs));
+      else local.set(p.name, ident("null"));
+    });
+  }
+
+  // ---------- interpolation ----------
+  function interpolate(text, scope, funcs) {
+    return text.replace(/#\{([^}]*)\}/g, function (m, expr) {
+      var v = evalExpr(expr, scope, funcs);
+      return plain(v);
+    });
+  }
+
+  // ---------- selector resolution ----------
+  function resolveSelector(sel, parents) {
+    var parts = splitTop(sel, ",").map(function (s) { return s.trim(); });
+    var out = [];
+    parts.forEach(function (part) {
+      if (parents.length === 0) { out.push(part); return; }
+      parents.forEach(function (par) {
+        if (part.indexOf("&") !== -1) out.push(part.replace(/&/g, par));
+        else out.push(par + " " + part);
+      });
+    });
+    return out;
+  }
+  function splitTop(s, ch) {
+    var res = [], buf = "", d = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (c === "(" || c === "[") d++;
+      else if (c === ")" || c === "]") d--;
+      if (c === ch && d === 0) { res.push(buf); buf = ""; }
+      else buf += c;
+    }
+    res.push(buf);
+    return res;
+  }
+
+  // ---------- executor ----------
+  function execStatements(stmts, scope, ctx, inFunction) {
+    for (var i = 0; i < stmts.length; i++) {
+      var st = stmts[i];
+      if (st.kind === "stmt") {
+        var text = st.text;
+        if (text[0] === "$") { // variable assignment
+          var eq = text.indexOf(":");
+          var name = text.slice(1, eq).trim();
+          var rest = text.slice(eq + 1).trim();
+          var isDefault = /!default\s*$/.test(rest);
+          var isGlobal = /!global\s*$/.test(rest);
+          rest = rest.replace(/!default\s*$/, "").replace(/!global\s*$/, "").trim();
+          if (isDefault && scope.has(name) && fmt(scope.get(name)) !== fmt(ident("null"))) continue;
+          var val = evalExpr(rest, scope, ctx.funcs);
+          if (isGlobal) scope.setNearest(name, val); else scope.set(name, val);
+          continue;
+        }
+        if (text[0] === "@") {
+          var sp = text.indexOf(" ");
+          var at = sp === -1 ? text.slice(1) : text.slice(1, sp);
+          var params = sp === -1 ? "" : text.slice(sp + 1).trim();
+          if (at === "return" && inFunction) { ctx.retBox(evalExpr(params, scope, ctx.funcs)); return "return"; }
+          if (at === "include") { doInclude(params, null, scope, ctx); continue; }
+          if (at === "extend") { ctx.pendingExtend && ctx.pendingExtend(params.trim()); continue; }
+          if (at === "content") { if (ctx.contentBlock) execStatements(ctx.contentBlock.stmts, ctx.contentBlock.scope, ctx); continue; }
+          if (at === "debug" || at === "warn") continue;
+          continue;
+        }
+        // declaration prop: value
+        var ci = firstColon(text);
+        if (ci !== -1 && ctx.rule) {
+          var prop = interpolate(text.slice(0, ci).trim(), scope, ctx.funcs);
+          var valText = text.slice(ci + 1).trim();
+          var v2 = evalExpr(valText, scope, ctx.funcs);
+          ctx.rule.decls.push(prop + ": " + fmt(v2) + ";");
+        }
+        continue;
+      }
+
+      // block
+      var head = st.head;
+      if (head[0] === "@") {
+        var r = execAtBlock(head, st.body, scope, ctx, inFunction);
+        if (r === "return") return "return";
+        continue;
+      }
+      if (head[0] === "%") { // placeholder def
+        ctx.placeholders[head.trim()] = st.body;
+        continue;
+      }
+      // nested property block: `font: { ... }`
+      if (/:\s*$/.test(head) && ctx.rule) {
+        var prefix = head.replace(/:\s*$/, "").trim();
+        var subStmts = parseStatements(st.body);
+        subStmts.forEach(function (ss) {
+          if (ss.kind === "stmt") {
+            var c2 = ss.text.indexOf(":");
+            var p = ss.text.slice(0, c2).trim();
+            var vv = evalExpr(ss.text.slice(c2 + 1).trim(), scope, ctx.funcs);
+            ctx.rule.decls.push(prefix + "-" + p + ": " + fmt(vv) + ";");
+          }
+        });
+        continue;
+      }
+
+      // normal rule
+      var selText = interpolate(head, scope, ctx.funcs);
+      var selectors = resolveSelector(selText, ctx.parents);
+      var rule = { selectors: selectors, decls: [], media: ctx.media };
+      ctx.css.push(rule);
+      var childCtx = Object.assign({}, ctx, { rule: rule, parents: selectors, pendingExtend: function (ph) {
+        // @extend %x — მოვძებნოთ placeholder და გავამრავლოთ სელექტორები
+        applyExtend(ph, selectors, ctx);
+      } });
+      var childScope = new Scope(scope);
+      execStatements(parseStatements(st.body), childScope, childCtx, inFunction);
+    }
+  }
+
+  function firstColon(text) {
+    // პირველი ორწერტილი, რომელიც არ არის ფსევდო-სელექტორის შიგნით
+    var d = 0;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (c === "(") d++; else if (c === ")") d--;
+      if (c === ":" && d === 0) return i;
+    }
+    return -1;
+  }
+
+  function execAtBlock(head, body, scope, ctx, inFunction) {
+    var sp = head.indexOf(" ");
+    var name = (sp === -1 ? head : head.slice(0, sp)).slice(1);
+    var params = sp === -1 ? "" : head.slice(sp + 1).trim();
+
+    if (name === "mixin") {
+      var mm = /^([\w-]+)\s*(?:\(([\s\S]*)\))?/.exec(params);
+      ctx.funcs.mixins[mm[1]] = { params: parseParams(mm[2] || ""), body: body };
+      return;
+    }
+    if (name === "function") {
+      var fm = /^([\w-]+)\s*(?:\(([\s\S]*)\))?/.exec(params);
+      ctx.funcs.user[fm[1]] = { params: parseParams(fm[2] || ""), body: body };
+      return;
+    }
+    if (name === "include") {
+      doInclude(params, { stmts: parseStatements(body), scope: scope }, scope, ctx);
+      return;
+    }
+    if (name === "if") {
+      var cond = evalExpr(params, scope, ctx.funcs);
+      if (truthy(cond)) return execStatements(parseStatements(body), new Scope(scope), ctx, inFunction);
+      // else chain — შემდეგი @else ცალკე ბლოკია; ჩვენ მას აქ ვერ ვხედავთ.
+      ctx.lastIf = false;
+      return;
+    }
+    if (name === "else") {
+      // params: "if <cond>" ან ""
+      if (ctx.lastIf === false) {
+        var m = /^if\s+([\s\S]+)$/.exec(params);
+        if (m) {
+          if (truthy(evalExpr(m[1], scope, ctx.funcs))) { ctx.lastIf = undefined; return execStatements(parseStatements(body), new Scope(scope), ctx, inFunction); }
+          ctx.lastIf = false; return;
+        }
+        ctx.lastIf = undefined;
+        return execStatements(parseStatements(body), new Scope(scope), ctx, inFunction);
+      }
+      return;
+    }
+    if (name === "each") {
+      var em = /^(\$[\w-]+(?:\s*,\s*\$[\w-]+)?)\s+in\s+([\s\S]+)$/.exec(params);
+      var varNames = em[1].split(",").map(function (s) { return s.trim().slice(1); });
+      var listVal = evalExpr(em[2], scope, ctx.funcs);
+      var items = listVal.t === "list" ? listVal.items : (listVal.t === "map" ? listVal.pairs : [listVal]);
+      for (var k = 0; k < items.length; k++) {
+        var ls = new Scope(scope);
+        if (listVal.t === "map") { ls.set(varNames[0], items[k][0]); if (varNames[1]) ls.set(varNames[1], items[k][1]); }
+        else if (varNames.length === 2 && items[k].t === "list") { ls.set(varNames[0], items[k].items[0]); ls.set(varNames[1], items[k].items[1]); }
+        else ls.set(varNames[0], items[k]);
+        var rr = execStatements(parseStatements(body), ls, ctx, inFunction);
+        if (rr === "return") return "return";
+      }
+      return;
+    }
+    if (name === "for") {
+      var fm2 = /^\$([\w-]+)\s+from\s+(.+?)\s+(through|to)\s+(.+)$/.exec(params);
+      var vn = fm2[1];
+      var start = nv(evalExpr(fm2[2], scope, ctx.funcs));
+      var through = fm2[3] === "through";
+      var end = nv(evalExpr(fm2[4], scope, ctx.funcs));
+      for (var x = start; through ? x <= end : x < end; x++) {
+        var fs = new Scope(scope); fs.set(vn, num(x));
+        var rr2 = execStatements(parseStatements(body), fs, ctx, inFunction);
+        if (rr2 === "return") return "return";
+      }
+      return;
+    }
+    if (name === "media") {
+      var mediaQ = "@media " + interpolate(params, scope, ctx.funcs);
+      var mctx = Object.assign({}, ctx, { media: mediaQ });
+      return execStatements(parseStatements(body), new Scope(scope), mctx, inFunction);
+    }
+    // უცნობი at-rule ბლოკით — გამოვიტანოთ როგორც არის
+    return;
+  }
+
+  function parseParams(str) {
+    if (!str.trim()) return [];
+    return splitTop(str, ",").map(function (p) {
+      p = p.trim();
+      var colon = p.indexOf(":");
+      if (colon !== -1) return { name: p.slice(1, colon).trim(), def: p.slice(colon + 1).trim() };
+      return { name: p.replace(/^\$/, "").replace(/\.\.\.$/, ""), def: null };
+    });
+  }
+
+  function doInclude(params, contentBlock, scope, ctx) {
+    var mm = /^([\w-]+)\s*(?:\(([\s\S]*)\))?/.exec(params.trim());
+    var mix = ctx.funcs.mixins[mm[1]];
+    if (!mix) return;
+    var argTexts = mm[2] ? splitTop(mm[2], ",") : [];
+    var args = argTexts.map(function (a) { return evalExpr(a.trim(), scope, ctx.funcs); });
+    var local = new Scope(scope);
+    bindArgs(mix.params, args, local, scope, ctx.funcs);
+    var incCtx = Object.assign({}, ctx, { contentBlock: contentBlock });
+    execStatements(parseStatements(mix.body), local, incCtx);
+  }
+
+  function applyExtend(placeholderName, selectors, ctx) {
+    // placeholderName მაგ. "%card"
+    var body = ctx.placeholders[placeholderName];
+    if (body === undefined) return;
+    // ვქმნით/ვპოულობთ პლეისჰოლდერის წესს და ვამატებთ ჩვენს სელექტორებს
+    var key = "__ph__" + placeholderName;
+    if (!ctx.phRules[key]) {
+      var rule = { selectors: [], decls: [], media: ctx.media };
+      ctx.phRules[key] = rule;
+      ctx.css.push(rule);
+      var childScope = new Scope(ctx.rootScope);
+      execStatements(parseStatements(body), childScope, Object.assign({}, ctx, { rule: rule, parents: [], pendingExtend: function(){} }));
+    }
+    selectors.forEach(function (s) {
+      if (ctx.phRules[key].selectors.indexOf(s) === -1) ctx.phRules[key].selectors.push(s);
+    });
+  }
+
+  // ---------- top-level ----------
+  function compile(scss) {
+    var src = stripComments(scss);
+    var scope = new Scope(null);
+    var funcs = { mixins: {}, user: {}, };
+    var ctx = {
+      css: [], funcs: funcs, rule: null, parents: [], media: null,
+      placeholders: {}, phRules: {}, rootScope: scope, lastIf: undefined,
+    };
+    // ვამუშავებთ top-level-ს ხელით, რომ @else-მ წინა @if-ის შედეგი დაინახოს
+    execTopLevel(parseStatements(src), scope, ctx);
+    return renderCss(ctx.css);
+  }
+
+  function execTopLevel(stmts, scope, ctx) {
+    // იგივე რაც execStatements, ოღონდ top-level (ctx.rule === null)
+    execStatements(stmts, scope, ctx, false);
+  }
+
+  function renderCss(rules) {
+    var byMedia = {};
+    var order = [];
+    rules.forEach(function (r) {
+      if (!r.selectors.length || !r.decls.length) return;
+      var m = r.media || "";
+      if (!byMedia[m]) { byMedia[m] = []; order.push(m); }
+      byMedia[m].push(r);
+    });
+    var out = "";
+    order.forEach(function (m) {
+      var block = byMedia[m].map(function (r) {
+        return r.selectors.join(",\n") + " {\n  " + r.decls.join("\n  ") + "\n}";
+      }).join("\n\n");
+      if (m) out += m + " {\n" + block.replace(/^/gm, "  ") + "\n}\n\n";
+      else out += block + "\n\n";
+    });
+    return out.trim() + "\n";
+  }
+    return compile;
+  })();
+
+  // SCSS პლეიგრაუნდი: მომხმარებელი წერს SCSS-ს, ჩვენ ვაკომპილირებთ CSS-ად,
+  // ვაჩვენებთ კომპილირებულ CSS-ს ცალკე პანელში და ვხატავთ შედეგს iframe-ში.
+  function createScssPlayground(html, scss, onCheck, options) {
+    const opts = options || {};
+
+    const scssArea = el("textarea", {
+      className: "code-editor",
+      attrs: { spellcheck: "false", rows: "14", "aria-label": "SCSS კოდი" },
+    });
+    scssArea.value = scss || "";
+
+    const cssView = el("pre", { className: "scss-output", text: "" });
+    const frame = el("iframe", {
+      className: "code-preview",
+      attrs: { title: "შედეგი", sandbox: "allow-same-origin" },
+    });
+
+    const RESET =
+      "*{box-sizing:border-box}body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;" +
+      "margin:0;padding:14px;color:#172033;background:#fff;line-height:1.55}";
+
+    let lastCss = "";
+
+    function compileNow() {
+      try {
+        lastCss = compileScss(scssArea.value);
+        cssView.textContent = lastCss;
+        cssView.classList.remove("has-error");
+        return true;
+      } catch (error) {
+        lastCss = "";
+        cssView.textContent = "⚠️ კომპილაციის შეცდომა: " + (error && error.message ? error.message : error);
+        cssView.classList.add("has-error");
+        return false;
+      }
+    }
+
+    function render() {
+      const ok = compileNow();
+      frame.srcdoc =
+        "<!doctype html><html><head><meta charset='utf-8'><style>" +
+        RESET +
+        "</style><style>" +
+        (ok ? lastCss : "") +
+        "</style></head><body>" +
+        (html || "") +
+        "</body></html>";
+    }
+
+    frame.addEventListener("load", function () {
+      if (!onCheck) return;
+      try {
+        const doc = frame.contentDocument;
+        if (doc) onCheck(doc, frame.contentWindow, lastCss, scssArea.value);
+      } catch (error) {
+        /* გადახედვა ჯერ არ არის მზად */
+      }
+    });
+
+    scssArea.addEventListener("input", render);
+    window.setTimeout(render, 0);
+
+    const panes = [
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: opts.label || "SCSS — დაწერე აქ" }),
+        scssArea,
+      ]),
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "→ კომპილირებული CSS" }),
+        cssView,
+      ]),
+      el("div", { className: "playground-pane" }, [
+        el("span", { className: "playground-label", text: "შედეგი" }),
+        frame,
+      ]),
+    ];
+
+    return {
+      element: el("div", { className: "playground playground-scss" }, panes),
+      getScss: function () { return scssArea.value; },
+      getCss: function () { return lastCss; },
+      setScss: function (value) { scssArea.value = value; render(); },
+      refresh: render,
+    };
+  }
+
   function createStylePlayground(html, css, onCheck, options) {
     const opts = options || {};
 
