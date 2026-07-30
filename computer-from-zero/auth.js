@@ -220,28 +220,29 @@
     return line;
   }
 
+  const API_BASE = String(window.CFZ_API || window.location.origin + "/api").replace(/\/+$/, "");
+  function fetchServerProgress() {
+    try {
+      return window
+        .fetch(API_BASE + "/progress")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    } catch (e) {
+      return Promise.resolve(null);
+    }
+  }
+
   function openDashboard() {
     const total = totalLessons() || 15;
     const overlay = el("div", "dash-overlay");
     const panel = el("div", "dash-panel");
     panel.append(el("h2", null, "სტუდენტების პროგრესი"));
 
-    Object.keys(USERS).forEach(function (id) {
-      if (USERS[id].role !== "student") {
-        return;
-      }
-      const lessons = progressCount(id);
-      const assignments = assignmentCount(id);
-      const row = el("div", "dash-row");
-      row.append(el("span", "dash-name", USERS[id].name));
-      row.append(bar("გაკვეთილები", lessons, total));
-      row.append(bar("დავალებები", assignments, total));
-      panel.append(row);
-    });
+    const rowsHost = el("div", "dash-rows");
+    panel.append(rowsHost);
+    const note = el("p", "login-note", "⏳ იტვირთება…");
+    panel.append(note);
 
-    panel.append(
-      el("p", "login-note", "ℹ️ ჩანს მხოლოდ ამ ბრაუზერში შენახული პროგრესი (backend არ არის)."),
-    );
     const close = el("button", "primary-button", "დახურვა");
     close.type = "button";
     close.addEventListener("click", function () {
@@ -256,6 +257,43 @@
       }
     });
     document.body.append(overlay);
+
+    function studentIds() {
+      return Object.keys(USERS).filter(function (id) { return USERS[id].role === "student"; });
+    }
+
+    function renderRows(counts, source) {
+      rowsHost.replaceChildren();
+      studentIds().forEach(function (id) {
+        const c = counts[id] || { lessons: 0, assignments: 0 };
+        const row = el("div", "dash-row");
+        row.append(el("span", "dash-name", USERS[id].name));
+        row.append(bar("გაკვეთილები", c.lessons, total));
+        row.append(bar("დავალებები", c.assignments, total));
+        rowsHost.append(row);
+      });
+      note.textContent = source === "server"
+        ? "🌐 სერვერიდან — ყველა მოწყობილობის პროგრესი ერთად."
+        : "ℹ️ მხოლოდ ამ ბრაუზერის პროგრესი (სერვერი მიუწვდომელია).";
+    }
+
+    // 1) მყისიერად — ლოკალური localStorage.
+    const localCounts = {};
+    studentIds().forEach(function (id) {
+      localCounts[id] = { lessons: progressCount(id), assignments: assignmentCount(id) };
+    });
+    renderRows(localCounts, "local");
+
+    // 2) სერვერიდან — თუ ხელმისაწვდომია, გადავფაროთ.
+    fetchServerProgress().then(function (data) {
+      if (!data) return;
+      const serverCounts = {};
+      studentIds().forEach(function (id) {
+        const u = data[id] || { lessons: [], assignments: [] };
+        serverCounts[id] = { lessons: (u.lessons || []).length, assignments: (u.assignments || []).length };
+      });
+      renderRows(serverCounts, "server");
+    });
   }
 
   // ---------- init ----------
