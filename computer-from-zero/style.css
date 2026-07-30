@@ -2848,6 +2848,12 @@ body:not([data-authed]) .app-main {
   color: #ffb4b4;
   background: #2a1416;
 }
+/* SCSS დაყენების გაკვეთილი — checklist */
+.setup-steps { display: flex; flex-direction: column; gap: 12px; margin: 8px 0 18px; }
+.setup-step { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.setup-step input { margin-top: 5px; flex: none; }
+.setup-step-t { display: block; margin-bottom: 6px; }
+.setup-step .markup-view { margin: 0; min-height: 0; }
 .js-playground {
   position: relative;
 }

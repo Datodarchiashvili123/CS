@@ -136,6 +136,71 @@
 
   // ---------- 17 ----------
   lessons.push({
+    id: "scss-setup",
+    title: "SCSS-ის დაყენება რეალურ პროექტში",
+    shortTitle: "დაყენება",
+    theory:
+      "აქამდე SCSS ბრაუზერში კომპილირდებოდა. რეალურ პროექტში კი გჭირდება Sass-კომპილატორი, რომელიც .scss-ს .css-ად თარგმნის — ბრაუზერს მხოლოდ .css ესმის. ყველაზე გავრცელებული გზა Node.js + `sass` პაკეტია: აყენებ ერთხელ, HTML-ში კი კომპილირებულ .css-ს აკავშირებ, არა .scss-ს.",
+    analogy:
+      "დაყენება — სამზარეულოს მომზადება: ჯერ ხელსაწყოს (Sass) აყენებ, მერე რეცეპტს (SCSS) წერ, კომპილატორი კი მზა კერძს (CSS) გამოგცემს, რომელსაც სტუმარი (ბრაუზერი) ჭამს.",
+    physicalLabel: "რას აკეთებს კომპილატორი",
+    physical:
+      "ბრძანება `sass in.scss out.css` კითხულობს .scss-ს და წერს .css-ს; `--watch`-ით ის ფონში რჩება და ყოველ შენახვაზე იმეორებს. production-ისთვის `--style=compressed` აპატარავებს ფაილს.",
+    challenge: "მონიშნე დაყენების ყველა ნაბიჯი, როცა შეასრულებ.",
+    createSimulation: function (container, setChallengeResult) {
+      const CFZ = window.CFZ;
+      const el = CFZ.el;
+
+      function cmd(text) { return el("pre", { className: "markup-view", text: text }); }
+
+      container.append(
+        el("div", { className: "breakdown-panel" }, [
+          el("h4", { text: "workflow" }),
+          el("p", { className: "breakdown-note", text: "styles.scss → [Sass კომპილატორი] → styles.css → <link>-ით HTML-ში. ბრაუზერს მხოლოდ .css ესმის." }),
+        ])
+      );
+
+      const STEPS = [
+        { t: "დააინსტალირე Node.js (nodejs.org, LTS ვერსია). შემოწმება:", code: "node -v" },
+        { t: "პროექტში ჩართე npm (შეიქმნება package.json):", code: "npm init -y" },
+        { t: "დააინსტალირე Sass dev-ინსტრუმენტად:", code: "npm install -D sass" },
+        { t: "შექმენი scss/styles.scss და ჩაწერე შენი SCSS კოდი.", code: null },
+        { t: "package.json-ის “scripts”-ში დაამატე:", code: '"build:css": "sass scss/styles.scss css/styles.css",\n"watch:css": "sass --watch scss/styles.scss:css/styles.css"' },
+        { t: "HTML-ში დააკავშირე .css (და არა .scss!):", code: '<link rel="stylesheet" href="css/styles.css" />' },
+        { t: "ააკომპილირე ან ჩართე watch-რეჟიმი:", code: "npm run watch:css" },
+      ];
+
+      const checks = [];
+      const list = el("div", { className: "setup-steps" });
+      STEPS.forEach(function (s, i) {
+        const box = el("input", { attrs: { type: "checkbox" } });
+        box.addEventListener("change", update);
+        checks.push(box);
+        const right = [el("span", { className: "setup-step-t", text: (i + 1) + ". " + s.t })];
+        if (s.code) right.push(cmd(s.code));
+        list.append(el("label", { className: "setup-step" }, [box, el("div", {}, right)]));
+      });
+
+      container.append(el("h4", { text: "ვარიანტი A — Node + Sass (მონიშნე შესრულებული)" }), list);
+
+      function update() {
+        const done = checks.filter(function (c) { return c.checked; }).length;
+        if (done === checks.length) setChallengeResult(true, "შესრულებულია: SCSS პროექტში ჩართე. 🎉");
+        else setChallengeResult(false, "მონიშნე დაყენების ყველა ნაბიჯი (" + done + "/" + checks.length + ").");
+      }
+
+      container.append(
+        el("div", { className: "breakdown-panel" }, [
+          el("h4", { text: "ალტერნატივები (Node-ის გარეშე)" }),
+          el("p", { className: "breakdown-note", text: "VS Code → გაფართოება „Live Sass Compiler“ → ღილაკი „Watch Sass“ (ერთი კლიკი). ან Dart Sass standalone ბინარი: sass scss/styles.scss css/styles.css --watch." }),
+        ]),
+        el("p", { className: "state-note", text: "ხშირი შეცდომები: HTML-ში ყოველთვის .css დააკავშირე (არა .scss); .css ხელით არ ჩაასწორო — watch გადააწერს; node_modules/ არ ატვირთო git-ში; production-ისთვის --style=compressed." })
+      );
+    },
+  });
+
+  // ---------- 18 ----------
+  lessons.push({
     id: "scss-recap",
     title: "რეკაპი და პარციალები",
     shortTitle: "რეკაპი",
