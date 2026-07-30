@@ -1,0 +1,34 @@
+# TSRE — პროგრესის API. ცალკე compose-პროექტია (`tsre`), playze-სგან დამოუკიდებელი.
+#
+# გაშვება სერვერზე:
+#   cd /opt/tsre-api && docker compose up -d
+#
+# ⚠️ ქსელი `playze_default` external-ია: მას playze-ის სტეკი ქმნის და მისივე Caddy
+#    ისმენს 80/443-ს (tsre.in-ს ისედაც ის ემსახურება). ამიტომ playze-ზე
+#    `docker compose down` ამ ქსელს წაშლის და tsre.in/api დროებით ჩამოვარდება.
+#    სრული განცალკევება ცალკე droplet-ს ან tsre-სთვის ცალკე edge-ს მოითხოვს.
+
+name: tsre
+
+services:
+  api:
+    image: node:22-alpine
+    container_name: tsre-api
+    command: node server.js
+    working_dir: /app
+    volumes:
+      # კოდი + data/progress.db (SQLite) host-ზე რჩება — კონტეინერის თავიდან შექმნა უსაფრთხოა.
+      - /opt/tsre-api:/app
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8787"
+    restart: unless-stopped
+    networks:
+      playze_default:
+        aliases:
+          # Caddyfile `reverse_proxy tsre-api:8787`-ს იყენებს — alias ამ სახელს იცავს.
+          - tsre-api
+
+networks:
+  playze_default:
+    external: true

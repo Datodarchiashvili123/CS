@@ -35,59 +35,60 @@ curl http://127.0.0.1:8787/api/health
 | GET | `/api/progress/:userId` | ერთი მომხმარებლის პროგრესი (შესვლისას) |
 | POST | `/api/progress` | `{userId, kind:"lessons"\|"assignments", id, done}` |
 
-## სერვერზე განთავსება (tsre.in)
+## სერვერზე განთავსება — ✅ უკვე გაშვებულია
 
-`server/` **არ** არის `computer-from-zero/`-ში, ამიტომ CI (rsync) მას **არ** განალაგებს — ეს ერთხელ ხელით უნდა გააკეთო.
+`server/` **არ** არის `computer-from-zero/`-ში, ამიტომ CI (rsync) მას **არ** განალაგებს.
+დეპლოი ერთხელ გაკეთდა ხელით; ქვემოთ ის, რაც რეალურად დგას სერვერზე.
 
-### 1. კოდი სერვერზე
+- **Host**: DigitalOcean droplet `playze-prod` (`138.68.88.42`) — tsre.in-იც და playze.io-ც აქაა.
+- **გზა**: `/opt/tsre-api/` (კოდი + `data/progress.db`).
+- **გაშვება**: Docker, ცალკე compose-პროექტი `tsre` (`docker-compose.yml`), `restart: unless-stopped`.
+- **Edge**: playze-ის Caddy კონტეინერი — `tsre.in` ბლოკში `/api/*` → `tsre-api:8787`.
 
-```bash
-rsync -av server/ user@tsre.in:/opt/tsre-api/
-```
-
-### 2. systemd სერვისი (მუდმივად გაშვებული)
-
-შექმენი `/etc/systemd/system/tsre-api.service`:
-
-```ini
-[Unit]
-Description=TSRE progress API
-After=network.target
-
-[Service]
-WorkingDirectory=/opt/tsre-api
-ExecStart=/usr/bin/node server.js
-Environment=PORT=8787
-Restart=always
-User=www-data
-
-[Install]
-WantedBy=multi-user.target
-```
+### კოდის განახლება
 
 ```bash
-sudo systemctl enable --now tsre-api
+rsync -av --exclude data --exclude node_modules server/ root@138.68.88.42:/opt/tsre-api/
+ssh root@138.68.88.42 'cd /opt/tsre-api && docker compose up -d --force-recreate'
 ```
 
-### 3. nginx — `/api`-ის პროქსი
-
-tsre.in-ის server-ბლოკში დაამატე (სტატიკური `location /`-ის გვერდით):
-
-```nginx
-location /api/ {
-    proxy_pass http://127.0.0.1:8787;
-    proxy_set_header Host $host;
-}
-```
+### ყოველდღიური ბრძანებები
 
 ```bash
-sudo nginx -t && sudo systemctl reload nginx
+cd /opt/tsre-api
+docker compose ps            # სტატუსი
+docker compose logs -f       # ლოგები
+docker compose restart       # გადატვირთვა
 ```
 
-ამის მერე `https://tsre.in/api/health` უნდა აბრუნებდეს `{"ok":true}` — და პროგრესი ავტომატურად დაიწყებს სინქრონს.
+### შემოწმება
+
+```bash
+curl https://tsre.in/api/health      # → {"ok":true,"users":3}
+```
+
+## ⚠️ დამოკიდებულება playze-ზე (ცნობიერი კომპრომისი)
+
+tsre და playze **სხვადასხვა პროექტია**, უბრალოდ ერთ droplet-ზე. tsre-ს საკუთარი
+compose-პროექტი აქვს და playze-ის სტეკში **არ** ურევია. მაგრამ ორი კვანძი საერთოა:
+
+1. **Caddy** — 80/443-ს playze-ის Caddy იჭერს და tsre.in-ის სტატიკასაც ისევ ის ასდის
+   (ეს ასე იყო ამ API-მდეც). `/api` მისივე `tsre.in` ბლოკშია.
+2. **ქსელი** — `tsre-api` `playze_default`-ზეა (external), რომ Caddy მისწვდეს.
+
+**შედეგი:** playze-ზე `docker compose down` წაშლის ამ ქსელს და **tsre.in/api ჩამოვარდება**
+(თავად საიტიც, რადგან Caddy იმავე სტეკშია). სრული განცალკევება ცალკე droplet-ს ან
+tsre-სთვის ცალკე edge-ს მოითხოვს.
+
+### Rollback (თუ Caddy-ის ცვლილება უნდა გაუქმდეს)
+
+```bash
+ssh root@138.68.88.42 'cp /opt/playze/docker/Caddyfile.pre-tsre-api /opt/playze/docker/Caddyfile \
+  && docker exec playze-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile'
+```
 
 ## შენიშვნები
 
 - **მომხმარებლები**: `server.js`-ის `KNOWN_USERS` სინქრონში დაიცავი `computer-from-zero/auth.js`-ის `USERS`-თან (ახლის დამატებისას განაახლე ორივე).
-- **ბექაფი**: `server/data/progress.db` — ერთადერთი მდგომარეობა; დროდადრო დააკოპირე.
-- **პორტი**: შეცვლა `PORT` env-ით.
+- **ბექაფი**: `/opt/tsre-api/data/progress.db` — ერთადერთი მდგომარეობა; დროდადრო დააკოპირე.
+- **პორტი**: `docker-compose.yml`-ის `PORT`/`HOST` env-ით. კონტეინერში `HOST=0.0.0.0` სავალდებულოა (თორემ Caddy ვერ მისწვდება).
