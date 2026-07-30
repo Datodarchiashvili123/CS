@@ -1,0 +1,10 @@
+{
+  "name": "tsre-progress-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TSRE — სტუდენტების პროგრესის მინი-backend (Node built-in http + node:sqlite, დამოკიდებულების გარეშე).",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -3193,10 +3193,47 @@ var __filename = "/app/index.js";
     saveSet(ASSIGN_KEY, completedAssignments);
   }
 
+  // ---------- სერვერ-სინქრონი (არასავალდებულო; localStorage რჩება offline-fallback-ად) ----------
+  // API_BASE default: იმავე დომენის /api. სხვა მისამართისთვის დააყენე window.CFZ_API.
+  const API_BASE = String(window.CFZ_API || window.location.origin + "/api").replace(/\/+$/, "");
+
+  function syncProgress(kind, id, done) {
+    if (USER_ID === "guest" || !id) return;
+    try {
+      window
+        .fetch(API_BASE + "/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: USER_ID, kind: kind, id: id, done: done }),
+          keepalive: true,
+        })
+        .catch(function () { /* offline — localStorage-ს ეყრდნობა */ });
+    } catch (e) { /* fetch მიუწვდომელია */ }
+  }
+
+  // შესვლისას სერვერიდან გადმოვწიოთ და ლოკალურს შევუერთოთ (union — offline ნამუშევარი არ იკარგება).
+  function pullProgress() {
+    if (USER_ID === "guest") return;
+    try {
+      window
+        .fetch(API_BASE + "/progress/" + encodeURIComponent(USER_ID), { method: "GET" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (!data) return;
+          let changed = false;
+          (data.lessons || []).forEach(function (x) { if (!completedLessons.has(x)) { completedLessons.add(x); changed = true; } });
+          (data.assignments || []).forEach(function (x) { if (!completedAssignments.has(x)) { completedAssignments.add(x); changed = true; } });
+          if (changed) { saveProgress(); saveAssignments(); if (refreshSidebar) refreshSidebar(); }
+        })
+        .catch(function () { /* offline */ });
+    } catch (e) { /* fetch მიუწვდომელია */ }
+  }
+
   function markLessonComplete(id) {
     if (!id || completedLessons.has(id)) return;
     completedLessons.add(id);
     saveProgress();
+    syncProgress("lessons", id, true);
     if (refreshSidebar) refreshSidebar();
   }
 
@@ -3205,6 +3242,7 @@ var __filename = "/app/index.js";
     if (completedLessons.has(id)) completedLessons.delete(id);
     else completedLessons.add(id);
     saveProgress();
+    syncProgress("lessons", id, completedLessons.has(id));
     if (refreshSidebar) refreshSidebar();
     return completedLessons.has(id);
   }
@@ -3212,6 +3250,7 @@ var __filename = "/app/index.js";
     if (completedAssignments.has(id)) completedAssignments.delete(id);
     else completedAssignments.add(id);
     saveAssignments();
+    syncProgress("assignments", id, completedAssignments.has(id));
     if (refreshSidebar) refreshSidebar();
     return completedAssignments.has(id);
   }
@@ -3244,4 +3283,5 @@ var __filename = "/app/index.js";
   }
 
   render();
+  pullProgress();
 })();
