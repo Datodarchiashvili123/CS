@@ -1,0 +1,10 @@
+{
+  "name": "tsre-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "დამხმარე სკრიპტები tsre.in-ის სტატიკური საიტისთვის (build-ის გარეშე დეპლოი).",
+  "scripts": {
+    "build:css": "npx --yes sass computer-from-zero/newsroom/styles.scss computer-from-zero/newsroom/styles.css --style=expanded --no-source-map",
+    "watch:css": "npx --yes sass --watch computer-from-zero/newsroom/styles.scss:computer-from-zero/newsroom/styles.css --style=expanded --no-source-map"
+  }
+}
