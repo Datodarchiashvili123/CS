@@ -11,6 +11,19 @@
 name: tsre
 
 services:
+  # სტატიკური საიტი. საკუთარ კონტეინერშია, რომ playze-ის Caddy-ს volume არ სჭირდებოდეს
+  # (მისი deploy ისედაც შლის tsre-ის mount-ს). playze-ის Caddy მხოლოდ პროქსით მოდის აქ.
+  web:
+    image: nginx:alpine
+    container_name: tsre-web
+    volumes:
+      - /var/www/tsre.in:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      playze_default:
+        aliases:
+          - tsre-web
+
   api:
     image: node:22-alpine
     container_name: tsre-api

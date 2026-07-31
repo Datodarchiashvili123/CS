@@ -67,18 +67,37 @@ docker compose restart       # გადატვირთვა
 curl https://tsre.in/api/health      # → {"ok":true,"users":3}
 ```
 
-## ⚠️ დამოკიდებულება playze-ზე (ცნობიერი კომპრომისი)
+## ⚠️ დამოკიდებულება playze-ზე
 
-tsre და playze **სხვადასხვა პროექტია**, უბრალოდ ერთ droplet-ზე. tsre-ს საკუთარი
-compose-პროექტი აქვს და playze-ის სტეკში **არ** ურევია. მაგრამ ორი კვანძი საერთოა:
+tsre და playze **სხვადასხვა პროექტია**, უბრალოდ ერთ droplet-ზე. tsre-ს **ორივე კონტეინერი
+საკუთარია** (`tsre-web` სტატიკისთვის + `tsre-api`), playze-ის სტეკში არ ურევია და მისი
+volume-ები არ სჭირდება. საერთო რჩება ორი კვანძი:
 
-1. **Caddy** — 80/443-ს playze-ის Caddy იჭერს და tsre.in-ის სტატიკასაც ისევ ის ასდის
-   (ეს ასე იყო ამ API-მდეც). `/api` მისივე `tsre.in` ბლოკშია.
-2. **ქსელი** — `tsre-api` `playze_default`-ზეა (external), რომ Caddy მისწვდეს.
+1. **Caddy** — 80/443-ს playze-ის Caddy იჭერს, ამიტომ `tsre.in` ბლოკი მის კონფიგშია
+   (მხოლოდ `reverse_proxy` tsre-ის კონტეინერებზე).
+2. **ქსელი** — `playze_default` (external), რომ Caddy მისწვდეს.
 
-**შედეგი:** playze-ზე `docker compose down` წაშლის ამ ქსელს და **tsre.in/api ჩამოვარდება**
-(თავად საიტიც, რადგან Caddy იმავე სტეკშია). სრული განცალკევება ცალკე droplet-ს ან
-tsre-სთვის ცალკე edge-ს მოითხოვს.
+### 📉 ინციდენტი 2026-07-31 — რა მოხდა და რატომ აღარ განმეორდება
+
+playze-ის დეპლოიმ `docker/Caddyfile` და `docker-compose*.yml` თავისი რეპოს ვერსიით
+გადააწერა. `tsre.in` ბლოკი და `/srv/tsre.in` volume იქ **არ იყო**, ამიტომ საიტი ჩამოვარდა.
+
+გამოსწორება:
+- სტატიკა გადავიდა tsre-ის **საკუთარ `tsre-web` კონტეინერში** → playze-ის Caddy-ს volume
+  აღარ სჭირდება (ერთი მიზეზი აღმოიფხვრა).
+- `tsre.in` ბლოკი ჩაიდო **playze-ის რეპოში** (`docker/Caddyfile`, commit `ef2f2a6`) →
+  დეპლოი მას აღარ შლის.
+
+**თუ tsre.in ისევ ჩამოვარდა:** ჯერ შეამოწმე, აკლია თუ არა ბლოკი —
+`grep tsre /opt/playze/docker/Caddyfile`. ასევე გაითვალისწინე Docker-ის single-file
+bind-mount: თუ დეპლოიმ ფაილი *ჩაანაცვლა*, კონტეინერი ძველ inode-ს ხედავს, ამიტომ
+host-ზე ჩასწორება არ კმარა — გამოიყენე:
+
+```bash
+docker cp /opt/playze/docker/Caddyfile playze-caddy-1:/tmp/Caddyfile.new
+docker exec playze-caddy-1 caddy validate --config /tmp/Caddyfile.new --adapter caddyfile
+docker exec playze-caddy-1 caddy reload  --config /tmp/Caddyfile.new --adapter caddyfile
+```
 
 ### Rollback (თუ Caddy-ის ცვლილება უნდა გაუქმდეს)
 
