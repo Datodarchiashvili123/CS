@@ -88,16 +88,34 @@ playze-ის დეპლოიმ `docker/Caddyfile` და `docker-compose*.y
 - `tsre.in` ბლოკი ჩაიდო **playze-ის რეპოში** (`docker/Caddyfile`, commit `ef2f2a6`) →
   დეპლოი მას აღარ შლის.
 
-**თუ tsre.in ისევ ჩამოვარდა:** ჯერ შეამოწმე, აკლია თუ არა ბლოკი —
-`grep tsre /opt/playze/docker/Caddyfile`. ასევე გაითვალისწინე Docker-ის single-file
-bind-mount: თუ დეპლოიმ ფაილი *ჩაანაცვლა*, კონტეინერი ძველ inode-ს ხედავს, ამიტომ
-host-ზე ჩასწორება არ კმარა — გამოიყენე:
+### 📉 ინციდენტი 2026-08-01 — inode-ის ხაფანგი (ფესვეულად გასწორდა)
+
+მეორედ ჩამოვარდა უკვე სხვა მიზეზით: Caddyfile-ს **ბლოკი ჰქონდა**, მაგრამ playze-ის
+compose ფაილს *ცალკე* ამაუნთებდა (`./docker/Caddyfile:/etc/caddy/Caddyfile`).
+Docker single-file mount-ს კონტეინერს **inode-ზე** აბამს; deploy კი ფაილს
+ჩაანაცვლებს (temp + rename → ახალი inode), ამიტომ Caddy ძველ ვერსიას კითხულობდა.
+
+**გასწორება:** playze-ის `docker-compose.prod.yml`-ში mount გახდა **საქაღალდის** —
+`./docker:/etc/caddy:ro` (commit `a890565`). შემოწმებულია: ფაილის ჩანაცვლების შემდეგ
+host და კონტეინერი ერთსა და იმავე inode-ს ხედავენ.
+
+### 🛡 `tsre-guard.sh` — სარეზერვო ბადე
+
+cron ყოველ 2 წუთში (`/opt/tsre-api/tsre-guard.sh`, ლოგი `/var/log/tsre-guard.log`).
+ამოწმებს tsre.in-ს და მხოლოდ **ნამდვილი** ჩამოვარდნისას აღადგენს (validate → reload).
+ფესვეული გასწორების შემდეგ ის აღარ უნდა ამუშავდეს — თუ ლოგში ჩანაწერები ჩნდება,
+ესე იგი რაღაც ისევ შლის ბლოკს ან კონფიგს.
+
+**ხელით აღდგენა (თუ ოდესმე დაგჭირდა):**
 
 ```bash
 docker cp /opt/playze/docker/Caddyfile playze-caddy-1:/tmp/Caddyfile.new
 docker exec playze-caddy-1 caddy validate --config /tmp/Caddyfile.new --adapter caddyfile
 docker exec playze-caddy-1 caddy reload  --config /tmp/Caddyfile.new --adapter caddyfile
 ```
+
+⚠️ **`docker compose up -d caddy` სიფრთხილით** — caddy-ს `depends_on: shop` აქვს, ამიტომ
+SSR კონტეინერიც გადაიტვირთება და playze.io ~1 წუთით 502-ს დააბრუნებს.
 
 ### Rollback (თუ Caddy-ის ცვლილება უნდა გაუქმდეს)
 
