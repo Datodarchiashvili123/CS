@@ -1,0 +1,675 @@
+// მოდული — სასწავლო პლატფორმა / SCSS სავარჯიშო
+// მაკეტი: "SCSS Mockup.dc.html" (Claude Design)
+// კომპილაცია: npx sass styles.scss styles.css --style=expanded --no-source-map
+//
+// მაკეტის აზრი SCSS-ია: ღილაკების 15 კომბინაცია, 4 შეტყობინება და ფერთა სკალები
+// ხელით არ იწერება — მაპებით, ციკლებითა და მიქსინებით გენერირდება.
+
+@use "sass:map";
+@use "sass:math";
+
+// =============================================================
+//  1. ტოკენები
+// =============================================================
+
+$ink:        #17150F;
+$paper:      #FCFBF8;
+$surface:    #F4F1EA;
+$surface-2:  #F7F5EF;
+$line:       #DFD9CD;
+$line-2:     #D6CFC1;
+$text:       #45413A;
+$muted:      #5F5A50;
+$faint:      #8B857A;
+$ghost:      #F1EEE7;
+$ghost-dark: #E7E2D8;
+
+$ph-bg:      #EBE7DE;
+$ph-line:    #C8C1B4;
+$ph-text:    #96907F;
+
+$serif: 'Noto Serif Georgian', Georgia, serif;
+$sans:  'Noto Sans Georgian', system-ui, -apple-system, sans-serif;
+$mono:  'JetBrains Mono', ui-monospace, monospace;
+
+// ფერთა სკალები — 100…900 (მაკეტის „ფერთა სკალა" პანელი)
+$palettes: (
+  "green":   (100: #D5E3DD, 300: #9EC0B4, 500: #6A9587, 700: #2E5D50, 900: #16332B),
+  "orange":  (100: #F7DECF, 300: #E7AE86, 500: #D5854F, 700: #C4622D, 900: #7C3B15),
+  "purple":  (100: #E6D9EC, 300: #C0A3CE, 500: #9B70AF, 700: #7A4B8F, 900: #452A51),
+  "neutral": (100: #F4F1EA, 300: #DFD9CD, 500: #A9A296, 700: #5F5A50, 900: #2A2822),
+);
+
+@function tone($name, $step) {
+  @return map.get(map.get($palettes, $name), $step);
+}
+
+$primary:      tone("green", 700);
+$primary-dark: #1D3E35;
+$accent:       tone("orange", 700);
+$accent-dark:  #A44E1F;
+$danger:       #B0343A;
+$danger-dark:  #8E262C;
+$info:         #1B6D8C;
+$warn:         #8A6D1F;
+
+// სივრცის სკალა — ერთი წყარო space() ფუნქციისთვის
+$space: (
+  "3xs": 4px, "2xs": 8px, "xs": 12px, "sm": 16px,
+  "md": 24px, "lg": 32px, "xl": 48px, "2xl": 64px, "3xl": 96px,
+);
+
+@function space($key) {
+  @return map.get($space, $key);
+}
+
+$bp-lg: 1180px;
+$bp-md: 900px;
+$bp-sm: 640px;
+
+@mixin below($w) {
+  @media (max-width: $w) { @content; }
+}
+
+// =============================================================
+//  2. ბაზისი
+// =============================================================
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: $paper;
+  color: $text;
+  font-family: $sans;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: $primary; text-decoration: none; &:hover { color: $primary-dark; } }
+
+h1, h2, h3 { margin: 0; font-family: $serif; font-weight: 600; color: $ink; }
+
+.mono { font-family: $mono; color: $ink; }
+
+.wrap { padding: space("2xl") 72px; border-bottom: 1px solid $line;
+  @include below($bp-md) { padding: space("xl") space("md"); }
+  @include below($bp-sm) { padding: space("lg") space("sm"); }
+}
+
+.grid12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: space("md");
+  @include below($bp-md) { grid-template-columns: 1fr; }
+}
+
+.eyebrow {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.15em;
+  text-transform: uppercase; color: $accent;
+}
+
+.ph {
+  display: flex; align-items: center; justify-content: center;
+  background: $ph-bg; border: 1px dashed $ph-line; border-radius: 8px;
+  color: $ph-text; font-size: 13px;
+}
+
+// =============================================================
+//  3. Header
+// =============================================================
+
+.header {
+  position: sticky; top: 0; z-index: 90;
+  display: grid; grid-template-columns: 240px 1fr auto;
+  align-items: center; gap: space("lg");
+  height: 76px; padding: 0 72px;
+  background: rgba(252, 251, 248, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid $line;
+
+  @include below($bp-lg) { grid-template-columns: auto 1fr auto; padding: 0 space("md"); }
+  @include below($bp-md) { height: auto; padding: space("sm") space("md"); grid-template-columns: 1fr auto; }
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+
+  &__mark {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 8px;
+    background: $primary; color: $paper;
+    font-family: $serif; font-size: 18px; font-weight: 600;
+  }
+  &__name {
+    font-family: $serif; font-size: 22px; font-weight: 600;
+    letter-spacing: -0.02em; color: $ink;
+  }
+}
+
+.nav {
+  display: flex; align-items: center; gap: 30px;
+  font-size: 15px; font-weight: 500;
+
+  a {
+    color: $muted; padding: 26px 0;
+    border-bottom: 2px solid transparent;
+    transition: color 160ms ease;
+
+    &:hover { color: $ink; }
+    &.is-active { color: $ink; border-bottom-color: $accent; }
+  }
+
+  @include below($bp-lg) { gap: space("sm"); font-size: 14px; }
+  @include below($bp-md) { display: none; }
+}
+
+.header__side {
+  display: flex; align-items: center; gap: 14px;
+
+  .search {
+    display: flex; align-items: center; height: 42px; padding: 0 space("sm");
+    border: 1px solid $line; border-radius: 6px;
+    font-size: 14px; color: $faint;
+    @include below($bp-sm) { display: none; }
+  }
+  .avatar {
+    display: flex; align-items: center; justify-content: center;
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid $line; background: $ghost;
+    font-size: 14px; font-weight: 600; color: $primary;
+  }
+}
+
+// =============================================================
+//  4. ღილაკები — 5 ვარიანტი × 3 ზომა, ორი ჩადგმული @each-ით
+// =============================================================
+
+$btn-variants: (
+  primary: (bg: $primary,    fg: $paper, bd: transparent, bg-hover: $primary-dark, fg-hover: $paper),
+  accent:  (bg: $accent,     fg: $paper, bd: transparent, bg-hover: $accent-dark,  fg-hover: $paper),
+  danger:  (bg: $danger,     fg: $paper, bd: transparent, bg-hover: $danger-dark,  fg-hover: $paper),
+  ghost:   (bg: $ghost,      fg: $ink,   bd: transparent, bg-hover: $ghost-dark,   fg-hover: $ink),
+  outline: (bg: transparent, fg: $ink,   bd: $ink,        bg-hover: $ink,          fg-hover: $paper),
+);
+
+$btn-sizes: (
+  sm: (h: 36px, px: space("sm"), fs: 14px),
+  md: (h: 46px, px: 22px,        fs: 15px),
+  lg: (h: 56px, px: 28px,        fs: 16px),
+);
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px; font-family: $sans; font-weight: 600;
+  cursor: pointer; border: 1px solid transparent;
+  transition: background 160ms ease, color 160ms ease;
+
+  @each $name, $v in $btn-variants {
+    &--#{$name} {
+      background: map.get($v, bg);
+      color: map.get($v, fg);
+      border-color: map.get($v, bd);
+
+      &:hover {
+        background: map.get($v, bg-hover);
+        color: map.get($v, fg-hover);
+      }
+    }
+  }
+
+  @each $name, $s in $btn-sizes {
+    &--#{$name} {
+      height: map.get($s, h);
+      padding: 0 map.get($s, px);
+      font-size: map.get($s, fs);
+    }
+  }
+}
+
+// =============================================================
+//  5. შეტყობინებები — ერთი მიქსინი, ოთხი ტიპი
+// =============================================================
+
+$alerts: (
+  success: (bg: #E4EDE9, bd: $primary, title: $primary-dark, body: $primary),
+  info:    (bg: #E1EEF3, bd: $info,    title: #12506A,       body: $info),
+  warning: (bg: #F5EEDC, bd: $warn,    title: #6B5417,       body: $warn),
+  error:   (bg: #F8E4E5, bd: $danger,  title: $danger-dark,  body: $danger),
+);
+
+@mixin alert($bg, $bd, $title, $body) {
+  background: $bg;
+  border-left: 4px solid $bd;
+  .alert__dot   { background: $bd; }
+  .alert__title { color: $title; }
+  .alert__text  { color: $body; }
+}
+
+.alert {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 20px; border-radius: 6px;
+
+  &__dot   { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; }
+  &__body  { display: flex; flex-direction: column; gap: space("3xs"); }
+  &__title { font-size: 15px; font-weight: 600; }
+  &__text  { font-size: 14px; line-height: 1.55; }
+
+  @each $name, $a in $alerts {
+    &--#{$name} {
+      @include alert(map.get($a, bg), map.get($a, bd), map.get($a, title), map.get($a, body));
+    }
+  }
+}
+
+// =============================================================
+//  6. Hero
+// =============================================================
+
+.hero {
+  background: linear-gradient(180deg, $surface 0%, $paper 100%);
+
+  &__copy { grid-column: span 7; display: flex; flex-direction: column; gap: space("md");
+    @include below($bp-md) { grid-column: 1 / -1; } }
+
+  &__badge {
+    align-self: flex-start; padding: 6px 12px; border-radius: 999px;
+    background: #E4EDE9; color: $primary;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: 54px; line-height: 1.06; letter-spacing: -0.03em; text-wrap: pretty;
+    @include below($bp-md) { font-size: 38px; }
+    @include below($bp-sm) { font-size: 30px; }
+  }
+
+  &__lead { margin: 0; max-width: 560px; font-size: 19px; line-height: 1.6; color: $text; text-wrap: pretty; }
+
+  &__actions { display: flex; align-items: center; gap: 14px; padding-top: space("2xs");
+    @include below($bp-sm) { flex-direction: column; align-items: stretch; } }
+
+  &__facts {
+    display: flex; align-items: center; gap: space("md"); flex-wrap: wrap;
+    padding-top: space("sm"); font-size: 14px; color: $muted;
+
+    .dot { width: 4px; height: 4px; border-radius: 50%; background: $ph-line; }
+  }
+
+  &__media {
+    grid-column: span 5;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 176px 176px; gap: space("sm");
+    @include below($bp-md) { grid-column: 1 / -1; }
+
+    .ph:first-child { grid-column: span 2; }
+  }
+}
+
+// =============================================================
+//  7. ტრეკები
+// =============================================================
+
+.section-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: space("xl"); margin-bottom: space("lg");
+
+  h2 { font-size: 34px; letter-spacing: -0.024em;
+    @include below($bp-sm) { font-size: 26px; } }
+
+  @include below($bp-md) { flex-direction: column; align-items: flex-start; gap: space("sm"); }
+}
+
+.filters {
+  display: flex; gap: space("2xs"); flex-wrap: wrap;
+
+  span {
+    padding: space("2xs") 14px; border-radius: 999px;
+    border: 1px solid $line; font-size: 14px; color: $text;
+
+    &.is-active { background: $ink; border-color: $ink; color: $paper; font-weight: 500; }
+  }
+}
+
+.tracks { display: grid; grid-template-columns: repeat(3, 1fr); gap: space("md");
+  @include below($bp-lg) { grid-template-columns: repeat(2, 1fr); }
+  @include below($bp-md) { grid-template-columns: 1fr; }
+}
+
+.track {
+  display: flex; flex-direction: column;
+  background: $paper; border: 1px solid $line; border-radius: 8px;
+  border-top: 3px solid $primary; overflow: hidden;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+
+  &:hover { box-shadow: 0 16px 36px rgba(23, 21, 15, 0.10); transform: translateY(-3px); }
+
+  &--green  { border-top-color: tone("green", 700); }
+  &--orange { border-top-color: tone("orange", 700); }
+  &--purple { border-top-color: tone("purple", 700); }
+  &--blue   { border-top-color: $info; }
+  &--red    { border-top-color: $danger; }
+  &--yellow { border-top-color: $warn; }
+
+  &__media { height: 168px; border-radius: 0; border: none; border-bottom: 1px dashed $ph-line; }
+  &__body { display: flex; flex-direction: column; gap: space("xs"); padding: space("md"); }
+
+  h3 { font-size: 21px; line-height: 1.28; letter-spacing: -0.012em; }
+  p  { margin: 0; font-size: 15px; line-height: 1.6; color: $muted; }
+
+  &__foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: space("xs"); border-top: 1px solid #EFEBE2;
+
+    .price { font-size: 17px; font-weight: 600; color: $ink; }
+    a { font-size: 14px; font-weight: 600; }
+  }
+}
+
+.tags { display: flex; align-items: center; gap: space("2xs"); flex-wrap: wrap; }
+
+// ტეგის ფერები — ერთი @each
+$tag-tones: (
+  "green":  (bg: #E4EDE9, fg: $primary),
+  "orange": (bg: #FAE9DF, fg: $accent),
+  "purple": (bg: #EFE6F3, fg: tone("purple", 700)),
+  "blue":   (bg: #E1EEF3, fg: $info),
+  "red":    (bg: #F8E4E5, fg: $danger),
+  "yellow": (bg: #F5EEDC, fg: $warn),
+  "grey":   (bg: $ghost,  fg: $muted),
+);
+
+.tag {
+  padding: space("3xs") 10px; border-radius: 4px;
+  font-size: 12px; font-weight: 600;
+
+  @each $name, $t in $tag-tones {
+    &--#{$name} { background: map.get($t, bg); color: map.get($t, fg); }
+  }
+}
+
+.meter {
+  display: flex; flex-direction: column; gap: 6px; padding-top: space("2xs");
+
+  &__head { display: flex; justify-content: space-between; font-size: 13px; color: $muted;
+    b { font-weight: 600; color: $ink; } }
+  &__track { height: 6px; background: $ph-bg; border-radius: 999px; overflow: hidden; }
+  &__fill  { height: 100%; background: $primary; }
+}
+
+// =============================================================
+//  8. კომპონენტების მატრიცა (Buttons)
+// =============================================================
+
+.matrix {
+  background: $surface;
+
+  &__intro { grid-column: span 4; display: flex; flex-direction: column; gap: 14px;
+    @include below($bp-md) { grid-column: 1 / -1; }
+    h2 { font-size: 32px; line-height: 1.12; letter-spacing: -0.024em; }
+    p  { margin: 0; font-size: 16px; line-height: 1.6; color: $muted; }
+  }
+
+  &__panel {
+    grid-column: span 8; display: flex; flex-direction: column; gap: space("sm");
+    padding: 28px; background: $paper; border: 1px solid $line; border-radius: 8px;
+    @include below($bp-md) { grid-column: 1 / -1; padding: space("sm"); overflow-x: auto; }
+  }
+
+  &__row {
+    display: grid; grid-template-columns: 96px repeat(5, 1fr);
+    gap: 14px; align-items: center;
+    @include below($bp-md) { min-width: 620px; }
+  }
+
+  &__label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: $faint;
+  }
+
+  &__note { padding-top: 6px; font-size: 13px; color: $faint; }
+}
+
+// =============================================================
+//  9. ფერთა სკალის პანელი
+// =============================================================
+
+.scales {
+  grid-column: span 5; display: flex; flex-direction: column; gap: space("sm");
+  padding: 28px; background: $ink; border-radius: 8px;
+  @include below($bp-md) { grid-column: 1 / -1; }
+
+  .eyebrow { color: #D9A88C; }
+  p { margin: 0; font-size: 15px; line-height: 1.6; color: #B5AFA3; }
+
+  &__row {
+    display: grid; grid-template-columns: 76px repeat(5, 1fr);
+    gap: space("2xs"); align-items: center;
+
+    span:first-child { font-size: 13px; color: #B5AFA3; }
+  }
+
+  &__swatch { height: 34px;
+    &:nth-child(2) { border-radius: 4px 0 0 4px; }
+    &:last-child   { border-radius: 0 4px 4px 0; }
+  }
+
+  &__steps {
+    display: flex; justify-content: space-between;
+    padding-top: 6px; font-size: 12px; color: #77726A;
+  }
+}
+
+// სკალის ფერები — მაპიდან, ხელით არცერთი
+@each $name, $steps in $palettes {
+  .scale-#{$name} {
+    @each $step, $color in $steps {
+      .s#{$step} { background: $color; }
+    }
+  }
+}
+
+.alerts-col { grid-column: span 7; display: flex; flex-direction: column; gap: space("sm");
+  @include below($bp-md) { grid-column: 1 / -1; }
+  h2 { font-size: 30px; letter-spacing: -0.022em; } }
+
+// =============================================================
+//  10. ცხრილი + სივრცის სკალა
+// =============================================================
+
+.schedule { background: $surface;
+
+  &__col { grid-column: span 7; display: flex; flex-direction: column; gap: space("md");
+    @include below($bp-md) { grid-column: 1 / -1; }
+    h2 { font-size: 30px; letter-spacing: -0.022em; } }
+
+  &__aside { grid-column: span 5; display: flex; flex-direction: column; gap: space("md");
+    @include below($bp-md) { grid-column: 1 / -1; }
+    h2 { font-size: 30px; letter-spacing: -0.022em; } }
+}
+
+.table-wrap { overflow-x: auto; }
+
+table.data {
+  width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums;
+
+  thead tr { background: $ink; }
+  th {
+    padding: space("xs") 14px; text-align: left;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #B5AFA3;
+    &:last-child { text-align: right; }
+  }
+  td {
+    padding: 14px; border-bottom: 1px solid $ghost-dark;
+    font-size: 15px; color: $text;
+    &:first-child { font-weight: 600; color: $ink; }
+    &:last-child  { text-align: right; color: $muted; }
+  }
+  tbody tr {
+    background: $paper;
+    &:nth-child(even) { background: $surface-2; }
+    &:last-child td { border-bottom: none; }
+  }
+}
+
+.spacing {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: space("md"); background: $paper;
+  border: 1px solid $line; border-radius: 8px;
+
+  &__row {
+    display: grid; grid-template-columns: 60px 1fr 64px;
+    gap: 14px; align-items: center;
+
+    .key { font-family: $mono; font-size: 13px; color: $muted; }
+    .bar { height: 12px; background: $accent; }
+    .val { font-family: $mono; font-size: 13px; text-align: right; color: $ink; }
+  }
+
+  &__note { padding-top: space("2xs"); font-size: 13px; line-height: 1.55; color: $faint; }
+}
+
+// ზოლების სიგანე — პირდაპირ იმავე მაპიდან, რომლითაც padding-ებს ვითვლით
+@each $key, $val in $space {
+  .bar-#{"" + $key} { width: $val; }
+}
+
+// =============================================================
+//  11. მენტორები
+// =============================================================
+
+.mentors {
+  h2 { margin-bottom: 28px; font-size: 30px; letter-spacing: -0.022em; }
+
+  &__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: space("md");
+    @include below($bp-lg) { grid-template-columns: repeat(2, 1fr); }
+    @include below($bp-sm) { grid-template-columns: 1fr; } }
+}
+
+.mentor {
+  display: flex; flex-direction: column; gap: space("xs");
+  padding: space("md"); background: $paper;
+  border: 1px solid $line; border-radius: 8px;
+
+  &__photo {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: $ph-bg; border: 1px dashed $ph-line;
+  }
+  h3 { font-size: 19px; letter-spacing: -0.01em; }
+  &__role { font-size: 14px; color: $muted; }
+}
+
+// =============================================================
+//  12. განაცხადის ფორმა
+// =============================================================
+
+.apply { background: $surface;
+
+  &__intro { grid-column: span 5; display: flex; flex-direction: column; gap: space("sm");
+    @include below($bp-md) { grid-column: 1 / -1; }
+    h2 { font-size: 34px; line-height: 1.1; letter-spacing: -0.024em; }
+    p  { margin: 0; font-size: 17px; line-height: 1.6; color: $text; } }
+
+  &__dates {
+    display: flex; flex-direction: column; gap: space("xs");
+    padding: 20px; background: $paper; border: 1px solid $line; border-radius: 8px;
+
+    div { display: flex; justify-content: space-between; font-size: 15px; color: $text; }
+    b { font-weight: 600; color: $ink; }
+  }
+}
+
+.form {
+  grid-column: span 7;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+  padding: space("lg"); background: $paper; border: 1px solid $line; border-radius: 8px;
+
+  @include below($bp-md) { grid-column: 1 / -1; }
+  @include below($bp-sm) { grid-template-columns: 1fr; padding: space("sm"); }
+
+  label { display: flex; flex-direction: column; gap: space("2xs"); font-size: 14px; font-weight: 600; color: $ink; }
+
+  .full { grid-column: span 2;
+    @include below($bp-sm) { grid-column: span 1; } }
+
+  input[type="text"], input[type="email"], input[type="tel"], select, textarea {
+    font-family: $sans; font-size: 16px; font-weight: 400; color: $ink;
+    background: $surface-2; border: 1px solid $line-2; border-radius: 6px;
+    outline: none; transition: border-color 160ms ease, background 160ms ease;
+
+    &:focus { border-color: $primary; background: $paper; }
+  }
+
+  input[type="text"], input[type="email"], input[type="tel"], select { height: 50px; padding: 0 space("sm"); }
+  textarea { padding: 14px space("sm"); line-height: 1.55; resize: vertical; }
+
+  input[type="radio"], input[type="checkbox"] { width: 17px; height: 17px; accent-color: $primary; }
+
+  fieldset {
+    grid-column: span 2; display: flex; align-items: center; flex-wrap: wrap;
+    gap: space("md"); margin: 0; padding: 0; border: none;
+
+    legend { padding: 0 0 space("xs"); font-size: 14px; font-weight: 600; color: $ink; }
+    label { flex-direction: row; align-items: center; gap: space("2xs"); font-size: 15px; font-weight: 400; }
+    @include below($bp-sm) { grid-column: span 1; }
+  }
+
+  &__consent {
+    grid-column: span 2; flex-direction: row !important; align-items: flex-start; gap: space("xs");
+    font-weight: 400 !important;
+    span { font-size: 14px; line-height: 1.55; color: $muted; }
+    @include below($bp-sm) { grid-column: span 1; }
+  }
+
+  &__submit { grid-column: span 2; width: 100%; height: 54px;
+    @include below($bp-sm) { grid-column: span 1; } }
+}
+
+// =============================================================
+//  13. Footer
+// =============================================================
+
+.footer {
+  padding: 56px 72px space("lg"); background: $ink;
+
+  @include below($bp-md) { padding: space("xl") space("md") space("md"); }
+
+  &__top {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.3fr;
+    gap: space("xl"); padding-bottom: space("xl"); border-bottom: 1px solid #35322A;
+
+    @include below($bp-lg) { grid-template-columns: 1fr 1fr 1fr; }
+    @include below($bp-sm) { grid-template-columns: 1fr; gap: space("md"); }
+  }
+
+  &__about {
+    display: flex; flex-direction: column; gap: 14px;
+
+    .brand-name { font-family: $serif; font-size: 24px; font-weight: 600; letter-spacing: -0.022em; color: $paper; }
+    p { margin: 0; max-width: 300px; font-size: 14px; line-height: 1.6; color: #B5AFA3; }
+    .mail { font-size: 14px; color: #D3CDC2; }
+  }
+
+  &__col {
+    display: flex; flex-direction: column; gap: space("xs");
+
+    .head { font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: #77726A; }
+    a { font-size: 14px; color: #D3CDC2; &:hover { color: $paper; } }
+    p { margin: 0; font-size: 14px; line-height: 1.6; color: #B5AFA3; }
+  }
+
+  &__cta {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 46px; border: 1px solid #4B4740; border-radius: 6px;
+    font-size: 15px; font-weight: 600; color: $paper;
+    transition: background 160ms ease;
+    &:hover { background: #35322A; color: $paper; }
+  }
+
+  &__bottom {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: space("xs");
+    padding-top: 28px; font-size: 13px; color: #77726A;
+
+    a { color: #B5AFA3; &:hover { color: $paper; } }
+    div { display: flex; align-items: center; gap: 20px; }
+  }
+}
