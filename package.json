@@ -1,10 +1,18 @@
 {
-  "name": "tsre-tools",
+  "name": "davaleba_3",
   "version": "1.0.0",
-  "private": true,
-  "description": "დამხმარე სკრიპტები tsre.in-ის სტატიკური საიტისთვის (build-ის გარეშე დეპლოი).",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "build:css": "npx --yes sass computer-from-zero/newsroom/styles.scss computer-from-zero/newsroom/styles.css --style=expanded --no-source-map",
-    "watch:css": "npx --yes sass --watch computer-from-zero/newsroom/styles.scss:computer-from-zero/newsroom/styles.css --style=expanded --no-source-map"
+  "build:css": "sass scss/styles.scss css/styles.css",
+  "watch:css": "sass --watch scss/styles.scss:css/styles.css",
+  "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "sass": "^1.102.0"
   }
 }
