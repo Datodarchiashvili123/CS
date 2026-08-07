@@ -60,6 +60,7 @@ h1, h2, h3 {
   font-size: 13px;
 }
 
+/*MAPS FUNCTIONS MIXINS*/
 /*HEADER*/
 .header {
   position: sticky;
@@ -70,6 +71,7 @@ h1, h2, h3 {
   align-items: center;
   gap: 32px;
   height: 76px;
+  margin: 0 auto;
   padding: 0 72px;
   background: #FCFBF8;
   border-bottom: 1px solid #DFD9CD;
@@ -118,6 +120,11 @@ h1, h2, h3 {
   color: #17150F;
 }
 
+.nav a.is-active {
+  color: #17150F;
+  border-bottom-color: #C4622D;
+}
+
 .header__side {
   display: flex;
   align-items: center;
@@ -153,64 +160,179 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  font-family: "Noto Sans Georgian", system-ui, -apple-system, sans-serif;
+  font-family: "Noto Serif Georgian", Georgia, serif;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
   transition: background 160ms ease, color 160ms ease;
 }
-.btn--primary {
+.btn--primary.btn--sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
   background: #2E5D50;
   color: #FCFBF8;
+  border-color: transparent;
 }
-.btn--primary:hover {
+.btn--primary.btn--sm:hover {
   background: #1D3E35;
-  color: #FCFBF8;
 }
-.btn--accent {
+.btn--accent.btn--sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
   background: #C4622D;
   color: #FCFBF8;
+  border-color: transparent;
 }
-.btn--accent:hover {
+.btn--accent.btn--sm:hover {
   background: #A44E1F;
 }
-.btn--danger {
+.btn--danger.btn--sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
   background: #B0343A;
   color: #FCFBF8;
+  border-color: transparent;
 }
-.btn--danger:hover {
+.btn--danger.btn--sm:hover {
   background: #8E262C;
 }
-.btn--ghost {
+.btn--ghost.btn--sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
   background: #F1EEE7;
   color: #17150F;
+  border-color: transparent;
 }
-.btn--ghost:hover {
+.btn--ghost.btn--sm:hover {
   background: #E7E2D8;
 }
-.btn--outline {
+.btn--outline.btn--sm {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
   background: transparent;
   color: #17150F;
   border-color: #17150F;
 }
-.btn--outline:hover {
+.btn--outline.btn--sm:hover {
   background: #17150F;
   color: #FCFBF8;
 }
-.btn--sm {
-  height: 36px;
-  padding: 0 16px;
-  font-size: 14px;
-}
-.btn--md {
+.btn--primary.btn--md {
   height: 46px;
   padding: 0 16px;
   font-size: 15px;
+  background: #2E5D50;
+  color: #FCFBF8;
+  border-color: transparent;
 }
-.btn--lg {
+.btn--primary.btn--md:hover {
+  background: #1D3E35;
+}
+.btn--accent.btn--md {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: #C4622D;
+  color: #FCFBF8;
+  border-color: transparent;
+}
+.btn--accent.btn--md:hover {
+  background: #A44E1F;
+}
+.btn--danger.btn--md {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: #B0343A;
+  color: #FCFBF8;
+  border-color: transparent;
+}
+.btn--danger.btn--md:hover {
+  background: #8E262C;
+}
+.btn--ghost.btn--md {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: #F1EEE7;
+  color: #17150F;
+  border-color: transparent;
+}
+.btn--ghost.btn--md:hover {
+  background: #E7E2D8;
+}
+.btn--outline.btn--md {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: transparent;
+  color: #17150F;
+  border-color: #17150F;
+}
+.btn--outline.btn--md:hover {
+  background: #17150F;
+  color: #FCFBF8;
+}
+.btn--primary.btn--lg {
   height: 56px;
   padding: 0 16px;
   font-size: 16px;
+  background: #2E5D50;
+  color: #FCFBF8;
+  border-color: transparent;
+}
+.btn--primary.btn--lg:hover {
+  background: #1D3E35;
+}
+.btn--accent.btn--lg {
+  height: 56px;
+  padding: 0 16px;
+  font-size: 16px;
+  background: #C4622D;
+  color: #FCFBF8;
+  border-color: transparent;
+}
+.btn--accent.btn--lg:hover {
+  background: #A44E1F;
+}
+.btn--danger.btn--lg {
+  height: 56px;
+  padding: 0 16px;
+  font-size: 16px;
+  background: #B0343A;
+  color: #FCFBF8;
+  border-color: transparent;
+}
+.btn--danger.btn--lg:hover {
+  background: #8E262C;
+}
+.btn--ghost.btn--lg {
+  height: 56px;
+  padding: 0 16px;
+  font-size: 16px;
+  background: #F1EEE7;
+  color: #17150F;
+  border-color: transparent;
+}
+.btn--ghost.btn--lg:hover {
+  background: #E7E2D8;
+}
+.btn--outline.btn--lg {
+  height: 56px;
+  padding: 0 16px;
+  font-size: 16px;
+  background: transparent;
+  color: #17150F;
+  border-color: #17150F;
+}
+.btn--outline.btn--lg:hover {
+  background: #17150F;
+  color: #FCFBF8;
 }
 
 /*HERO-SECTION*/
@@ -276,12 +398,6 @@ h1, h2, h3 {
 }
 .hero__media .ph:first-child {
   grid-column: span 2;
-  width: 496px;
-  height: 176px;
-}
-.hero__media .small {
-  width: 240px;
-  height: 176px;
 }
 
 /*FILTERS & TRACKS*/
@@ -673,67 +789,67 @@ h1, h2, h3 {
 }
 
 .scale-green .s100 {
-  background: #D5E3DD;
+  background: rgb(79.5098039216%, 84.1176470588%, 82.8431372549%);
 }
 .scale-green .s300 {
-  background: #9EC0B4;
+  background: rgb(54.9215686275%, 65.0588235294%, 62.2549019608%);
 }
 .scale-green .s500 {
-  background: #6A9587;
+  background: rgb(34.431372549%, 49.1764705882%, 45.0980392157%);
 }
 .scale-green .s700 {
   background: #2E5D50;
 }
 .scale-green .s900 {
-  background: #16332B;
+  background: rgb(10.8235294118%, 21.8823529412%, 18.8235294118%);
 }
 
 .scale-orange .s100 {
-  background: #F7DECF;
+  background: rgb(94.2156862745%, 84.6078431373%, 79.4117647059%);
 }
 .scale-orange .s300 {
-  background: #E7AE86;
+  background: rgb(87.2745098039%, 66.137254902%, 54.7058823529%);
 }
 .scale-orange .s500 {
-  background: #D5854F;
+  background: rgb(81.4901960784%, 50.7450980392%, 34.1176470588%);
 }
 .scale-orange .s700 {
   background: #C4622D;
 }
 .scale-orange .s900 {
-  background: #7C3B15;
+  background: rgb(46.1176470588%, 23.0588235294%, 10.5882352941%);
 }
 
 .scale-purple .s100 {
-  background: #E6D9EC;
+  background: rgb(86.9607843137%, 82.3529411765%, 89.0196078431%);
 }
 .scale-purple .s300 {
-  background: #C0A3CE;
+  background: rgb(71.3137254902%, 61.1764705882%, 75.8431372549%);
 }
 .scale-purple .s500 {
-  background: #9B70AF;
+  background: rgb(58.2745098039%, 43.5294117647%, 64.862745098%);
 }
 .scale-purple .s700 {
   background: #7A4B8F;
 }
 .scale-purple .s900 {
-  background: #452A51;
+  background: rgb(28.7058823529%, 17.6470588235%, 33.6470588235%);
 }
 
 .scale-neutral .s100 {
-  background: #F4F1EA;
+  background: rgb(84.3137254902%, 83.8235294118%, 82.8431372549%);
 }
 .scale-neutral .s300 {
-  background: #DFD9CD;
+  background: rgb(65.4901960784%, 64.4117647059%, 62.2549019608%);
 }
 .scale-neutral .s500 {
-  background: #A9A296;
+  background: #7f7b73;
 }
 .scale-neutral .s700 {
   background: #5F5A50;
 }
 .scale-neutral .s900 {
-  background: #2A2822;
+  background: #393630;
 }
 
 /*SCHEDULE & SPACING*/
