@@ -1,0 +1,38 @@
+@use "sass:color";
+
+@mixin btn($pd, $bg:#000, $color){
+  padding: $pd;
+  background-color:$bg;
+  color:$color;
+}
+
+
+@function hov($padding, $multi: 0.5) {
+  @return $padding * $multi;
+}
+
+.header__side{
+  &__btn{
+    @include btn(20px, #121212, blue);
+    &:hover{
+      padding: hov(20px, 20)
+    }
+  }
+}
+
+.navbar{
+  &_btn{
+    @include btn(20px, green, red);
+  }
+}
+
+.card{
+  &_btn{
+    @include btn(20px, blue, blue);
+  }
+}
+
+
+
+
+
