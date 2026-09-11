@@ -4,71 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Dogs</title>
+    <title>Document</title>
 
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4d48a;
+            background-color: #f2f2f2;
             margin: 0;
             padding: 20px;
         }
 
+        #web {
+            max-width: 900px;
+            margin: auto;
+        }
+
         h1 {
             text-align: center;
-            color: #be4431;
-            background-color: transparent;
-            border: 2px solid #be4431;
+            background-color: #222;
+            color: white;
+            padding: 15px;
             border-radius: 10px;
-            padding: 10px 25px;
-            width: fit-content;
-            margin: 20px auto;
+            margin-top: 30px;
         }
 
-        #breeds {
-            max-width: 1200px;
-            margin: 30px auto;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-
-        .card {
+        p {
             background-color: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            margin: 10px auto;
+            border-radius: 8px;
+            font-size: 20px;
         }
 
-        .card img {
-            width: 100%;
-            height: 220px;
-            object-fit: cover;
+        img {
+            display: block;
+            width: 300px;
+            margin: 10px auto;
+            border-radius: 10px;
         }
 
-        .card-content {
-            padding: 20px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-            color: #444;
-        }
-
-        .card p {
-            color: #666;
-            line-height: 1.5;
+        line {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Dog Breeds</h1>
+    <div id="page"></div>
 
-    <div id="breeds"></div>
-
-    <script src="script.js"></script>
+    <script src="./task.js"></script>
 
 </body>
 </html>
